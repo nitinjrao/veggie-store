@@ -59,6 +59,7 @@ model Category {
   id        String   @id @default(uuid())
   name      String   @unique
   nameHindi String?  @map("name_hindi")
+  nameKannada String? @map("name_kannada")
   image     String?
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
@@ -72,6 +73,7 @@ model Vegetable {
   id            String   @id @default(uuid())
   name          String
   nameHindi     String?  @map("name_hindi")
+  nameKannada   String?  @map("name_kannada")
   image         String?
   emoji         String?
   description   String?

@@ -25,6 +25,9 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
       {vegetable.nameHindi && (
         <p className="text-xs text-text-muted font-hindi">{vegetable.nameHindi}</p>
       )}
+      {vegetable.nameKannada && (
+        <p className="text-xs text-text-muted">{vegetable.nameKannada}</p>
+      )}
 
       <div className="mt-auto pt-3 space-y-1">
         {pricePerKg !== null && (

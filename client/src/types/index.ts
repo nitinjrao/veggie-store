@@ -2,6 +2,7 @@ export interface Category {
   id: string;
   name: string;
   nameHindi: string | null;
+  nameKannada?: string | null;
   image: string | null;
   sortOrder: number;
   _count?: {
@@ -23,10 +24,13 @@ export interface Vegetable {
   id: string;
   name: string;
   nameHindi: string | null;
+  nameKannada?: string | null;
   image: string | null;
   emoji: string | null;
   description: string | null;
   available: boolean;
+  stockKg?: string;
+  minStockAlert?: string;
   categoryId: string;
   category: Category;
   prices: Price[];

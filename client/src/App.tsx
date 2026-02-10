@@ -9,6 +9,8 @@ import OrderHistoryPage from './pages/customer/OrderHistoryPage';
 import OrderDetailsPage from './pages/customer/OrderDetailsPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminVegetablesPage from './pages/admin/AdminVegetablesPage';
+import AdminVegetableFormPage from './pages/admin/AdminVegetableFormPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -28,6 +30,9 @@ export default function App() {
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboardPage />} />
+        <Route path="vegetables" element={<AdminVegetablesPage />} />
+        <Route path="vegetables/new" element={<AdminVegetableFormPage />} />
+        <Route path="vegetables/:id/edit" element={<AdminVegetableFormPage />} />
       </Route>
 
       {/* 404 */}

@@ -75,6 +75,7 @@ export const searchVegetables = async (req: Request, res: Response) => {
       OR: [
         { name: { contains: query, mode: 'insensitive' } },
         { nameHindi: { contains: query, mode: 'insensitive' } },
+        { nameKannada: { contains: query, mode: 'insensitive' } },
       ],
     },
     include: vegetableInclude,

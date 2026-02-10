@@ -7,6 +7,8 @@ import authRoutes from './routes/authRoutes';
 import vegetableRoutes from './routes/vegetableRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import orderRoutes from './routes/orderRoutes';
+import adminVegetableRoutes from './routes/adminVegetableRoutes';
+import adminDashboardRoutes from './routes/adminDashboardRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -25,6 +27,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vegetables', vegetableRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin/vegetables', adminVegetableRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
