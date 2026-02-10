@@ -10,6 +10,8 @@ import orderRoutes from './routes/orderRoutes';
 import adminVegetableRoutes from './routes/adminVegetableRoutes';
 import adminDashboardRoutes from './routes/adminDashboardRoutes';
 import adminOrderRoutes from './routes/adminOrderRoutes';
+import adminCustomerRoutes from './routes/adminCustomerRoutes';
+import favoriteRoutes from './routes/favoriteRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -31,6 +33,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin/vegetables', adminVegetableRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/admin/customers', adminCustomerRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, ShoppingCart } from 'lucide-react';
+import { Search, User, LogOut, ShoppingCart, Heart } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useCartStore } from '../../stores/cartStore';
 import { useState } from 'react';
@@ -51,6 +51,12 @@ export default function Header({ onSearch, searchQuery = '' }: HeaderProps) {
         )}
 
         <div className="flex items-center gap-3">
+          {isAuthenticated && user?.role === 'customer' && (
+            <Link to="/favorites" className="p-2 rounded-full hover:bg-gray-100 text-text-muted">
+              <Heart className="w-5 h-5" />
+            </Link>
+          )}
+
           <Link to="/cart" className="relative p-2 rounded-full hover:bg-gray-100 text-text-muted">
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (

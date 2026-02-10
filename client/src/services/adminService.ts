@@ -72,6 +72,13 @@ export const adminService = {
 
   updateOrderStatus: (id: string, status: OrderStatus) =>
     api.put<AdminOrder>(`/admin/orders/${id}/status`, { status }).then((r) => r.data),
+
+  // Customers
+  listCustomers: (params?: { page?: number; search?: string }) =>
+    api.get<AdminCustomersResponse>('/admin/customers', { params }).then((r) => r.data),
+
+  getCustomer: (id: string) =>
+    api.get<any>(`/admin/customers/${id}`).then((r) => r.data),
 };
 
 export interface AdminOrdersResponse {
@@ -95,4 +102,18 @@ export interface AdminOrderListItem {
 
 export interface AdminOrder extends Order {
   customer: { id: string; name: string | null; phone: string; address: string | null };
+}
+
+export interface AdminCustomersResponse {
+  customers: {
+    id: string;
+    name: string | null;
+    phone: string;
+    createdAt: string;
+    _count: { orders: number };
+  }[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

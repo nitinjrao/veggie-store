@@ -1,6 +1,8 @@
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Heart } from 'lucide-react';
 import type { Vegetable } from '../../types';
 import { useCartStore } from '../../stores/cartStore';
+import { useFavoriteStore } from '../../stores/favoriteStore';
+import { useAuthStore } from '../../stores/authStore';
 
 interface VegetableCardProps {
   vegetable: Vegetable;
@@ -18,8 +20,28 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
   const incrementItem = useCartStore((s) => s.incrementItem);
   const decrementItem = useCartStore((s) => s.decrementItem);
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const userRole = useAuthStore((s) => s.user?.role);
+  const isFav = useFavoriteStore((s) => s.ids.has(vegetable.id));
+  const toggleFav = useFavoriteStore((s) => s.toggle);
+
+  const showFav = isAuthenticated && userRole === 'customer';
+
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition p-4 flex flex-col">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition p-4 flex flex-col relative">
+      {showFav && (
+        <button
+          onClick={() => toggleFav(vegetable.id)}
+          className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-100 transition"
+        >
+          <Heart
+            className={`w-4.5 h-4.5 transition ${
+              isFav ? 'fill-red-500 text-red-500' : 'text-gray-300 hover:text-red-400'
+            }`}
+          />
+        </button>
+      )}
+
       <div className="text-4xl text-center mb-3">{vegetable.emoji || '🥬'}</div>
       <h3 className="font-semibold text-sm text-text-dark">{vegetable.name}</h3>
       {vegetable.nameHindi && (
