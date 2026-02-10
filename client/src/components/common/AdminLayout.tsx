@@ -1,5 +1,5 @@
 import { Outlet, Navigate, Link, NavLink, useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Package, ShoppingCart, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Share2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useInitialize } from '../../hooks/useInitialize';
 
@@ -8,6 +8,8 @@ const navItems = [
   { to: '/admin/vegetables', label: 'Vegetables', icon: Package, end: false },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingCart, end: false },
   { to: '/admin/customers', label: 'Customers', icon: Users, end: false },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3, end: false },
+  { to: '/admin/share', label: 'Share', icon: Share2, end: false },
 ];
 
 export default function AdminLayout() {

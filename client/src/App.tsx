@@ -16,6 +16,8 @@ import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminOrderDetailPage from './pages/admin/AdminOrderDetailPage';
 import AdminCustomersPage from './pages/admin/AdminCustomersPage';
 import AdminCustomerDetailPage from './pages/admin/AdminCustomerDetailPage';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
+import AdminSharePage from './pages/admin/AdminSharePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -43,6 +45,8 @@ export default function App() {
         <Route path="orders/:id" element={<AdminOrderDetailPage />} />
         <Route path="customers" element={<AdminCustomersPage />} />
         <Route path="customers/:id" element={<AdminCustomerDetailPage />} />
+        <Route path="analytics" element={<AdminAnalyticsPage />} />
+        <Route path="share" element={<AdminSharePage />} />
       </Route>
 
       {/* 404 */}
