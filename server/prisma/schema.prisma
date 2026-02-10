@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum UnitType {
+  KG
+  GRAM
+  PIECE
+  BUNCH
+  PACKET
+}
+
+enum ChangeType {
+  RESTOCK
+  SALE
+  ADJUSTMENT
+  WASTAGE
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  name      String?
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orders    Order[]
+  favorites Favorite[]
+
+  @@map("customers")
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  nameHindi String?  @map("name_hindi")
+  image     String?
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  vegetables Vegetable[]
+
+  @@map("categories")
+}
+
+model Vegetable {
+  id            String   @id @default(uuid())
+  name          String
+  nameHindi     String?  @map("name_hindi")
+  image         String?
+  emoji         String?
+  description   String?
+  available     Boolean  @default(true)
+  stockKg       Decimal  @default(0) @map("stock_kg") @db.Decimal(10, 3)
+  minStockAlert Decimal  @default(5) @map("min_stock_alert") @db.Decimal(10, 3)
+  categoryId    String   @map("category_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  category      Category       @relation(fields: [categoryId], references: [id])
+  prices        Price[]
+  orderItems    OrderItem[]
+  favorites     Favorite[]
+  priceHistory  PriceHistory[]
+  inventoryLogs InventoryLog[]
+
+  @@map("vegetables")
+}
+
+model Price {
+  id            String   @id @default(uuid())
+  vegetableId   String   @map("vegetable_id")
+  pricePerKg    Decimal? @map("price_per_kg") @db.Decimal(10, 2)
+  pricePerPiece Decimal? @map("price_per_piece") @db.Decimal(10, 2)
+  pricePerPacket Decimal? @map("price_per_packet") @db.Decimal(10, 2)
+  packetWeight  Decimal? @map("packet_weight") @db.Decimal(10, 3)
+  effectiveFrom DateTime @default(now()) @map("effective_from")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  vegetable Vegetable @relation(fields: [vegetableId], references: [id])
+
+  @@map("prices")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique @map("order_number")
+  customerId  String      @map("customer_id")
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @map("total_amount") @db.Decimal(10, 2)
+  address     String?
+  notes       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  items         OrderItem[]
+  inventoryLogs InventoryLog[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  vegetableId String   @map("vegetable_id")
+  quantity    Decimal  @db.Decimal(10, 3)
+  unit        UnitType
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice  Decimal  @map("total_price") @db.Decimal(10, 2)
+
+  order     Order     @relation(fields: [orderId], references: [id])
+  vegetable Vegetable @relation(fields: [vegetableId], references: [id])
+
+  @@map("order_items")
+}
+
+model Favorite {
+  id          String   @id @default(uuid())
+  customerId  String   @map("customer_id")
+  vegetableId String   @map("vegetable_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  customer  Customer  @relation(fields: [customerId], references: [id])
+  vegetable Vegetable @relation(fields: [vegetableId], references: [id])
+
+  @@unique([customerId, vegetableId])
+  @@map("favorites")
+}
+
+model PriceHistory {
+  id          String   @id @default(uuid())
+  vegetableId String   @map("vegetable_id")
+  oldPrice    Decimal? @map("old_price") @db.Decimal(10, 2)
+  newPrice    Decimal  @map("new_price") @db.Decimal(10, 2)
+  changedAt   DateTime @default(now()) @map("changed_at")
+
+  vegetable Vegetable @relation(fields: [vegetableId], references: [id])
+
+  @@map("price_history")
+}
+
+model InventoryLog {
+  id          String     @id @default(uuid())
+  vegetableId String     @map("vegetable_id")
+  orderId     String?    @map("order_id")
+  changeType  ChangeType @map("change_type")
+  quantity    Decimal    @db.Decimal(10, 3)
+  notes       String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  vegetable Vegetable @relation(fields: [vegetableId], references: [id])
+  order     Order?    @relation(fields: [orderId], references: [id])
+
+  @@map("inventory_logs")
+}

@@ -1,0 +1,37 @@
+import { Routes, Route } from 'react-router-dom';
+import CustomerLayout from './components/common/CustomerLayout';
+import AdminLayout from './components/common/AdminLayout';
+import HomePage from './pages/customer/HomePage';
+import CustomerLoginPage from './pages/customer/CustomerLoginPage';
+import CartPage from './pages/customer/CartPage';
+import OrderConfirmationPage from './pages/customer/OrderConfirmationPage';
+import OrderHistoryPage from './pages/customer/OrderHistoryPage';
+import OrderDetailsPage from './pages/customer/OrderDetailsPage';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import NotFoundPage from './pages/NotFoundPage';
+
+export default function App() {
+  return (
+    <Routes>
+      {/* Customer routes */}
+      <Route element={<CustomerLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<CustomerLoginPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrderHistoryPage />} />
+        <Route path="/orders/:id" element={<OrderDetailsPage />} />
+        <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
+      </Route>
+
+      {/* Admin routes */}
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboardPage />} />
+      </Route>
+
+      {/* 404 */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}

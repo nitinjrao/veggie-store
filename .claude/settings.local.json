@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cmd.exe /c \"docker ps\")",
+      "Bash(powershell.exe -Command \"docker ps\")",
+      "Bash(powershell.exe:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx vite build)",
+      "Bash(git add:*)"
+    ]
+  }
+}
