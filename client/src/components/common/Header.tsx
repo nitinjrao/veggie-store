@@ -31,7 +31,7 @@ export default function Header({ onSearch, searchQuery = '' }: HeaderProps) {
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <span className="text-2xl">🥬</span>
           <span className="font-heading font-bold text-xl text-primary-green">
-            Veggie Store
+            Sampada Green
           </span>
         </Link>
 

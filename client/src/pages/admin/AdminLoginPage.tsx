@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h2 className="font-heading font-bold text-xl text-center mb-1">Admin Login</h2>
-          <p className="text-sm text-text-muted text-center mb-6">Veggie Store Dashboard</p>
+          <p className="text-sm text-text-muted text-center mb-6">Sampada Green Dashboard</p>
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>

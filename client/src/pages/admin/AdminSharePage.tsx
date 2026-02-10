@@ -5,7 +5,7 @@ import { Copy, Check, Share2, MessageCircle } from 'lucide-react';
 export default function AdminSharePage() {
   const [copied, setCopied] = useState(false);
   const storeUrl = window.location.origin;
-  const whatsappMessage = `Check out fresh vegetables at Veggie Store! Order online: ${storeUrl}`;
+  const whatsappMessage = `Check out fresh vegetables at Sampada Green! Order online: ${storeUrl}`;
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
 
   const handleCopy = async () => {

@@ -32,7 +32,7 @@ export default function AdminLayout() {
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/admin" className="font-heading font-bold text-lg text-primary-green">
-              Veggie Store Admin
+              Sampada Green Admin
             </Link>
             <div className="hidden sm:flex items-center gap-1">
               {navItems.map((item) => (
