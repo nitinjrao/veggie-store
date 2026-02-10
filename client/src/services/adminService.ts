@@ -1,5 +1,5 @@
 import api from './api';
-import type { Vegetable, Category } from '../types';
+import type { Vegetable, Category, Order, OrderStatus } from '../types';
 
 export interface DashboardStats {
   totalVegetables: number;
@@ -60,4 +60,39 @@ export const adminService = {
 
   getCategories: () =>
     api.get<Category[]>('/categories').then((r) => r.data),
+
+  // Orders
+  listOrders: (params?: { page?: number; status?: string; search?: string }) =>
+    api
+      .get<AdminOrdersResponse>('/admin/orders', { params })
+      .then((r) => r.data),
+
+  getOrder: (id: string) =>
+    api.get<AdminOrder>(`/admin/orders/${id}`).then((r) => r.data),
+
+  updateOrderStatus: (id: string, status: OrderStatus) =>
+    api.put<AdminOrder>(`/admin/orders/${id}/status`, { status }).then((r) => r.data),
 };
+
+export interface AdminOrdersResponse {
+  orders: AdminOrderListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AdminOrderListItem {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  totalAmount: string;
+  createdAt: string;
+  updatedAt: string;
+  customer: { id: string; name: string | null; phone: string };
+  _count: { items: number };
+}
+
+export interface AdminOrder extends Order {
+  customer: { id: string; name: string | null; phone: string; address: string | null };
+}
