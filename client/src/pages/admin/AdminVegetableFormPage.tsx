@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { adminService } from '../../services/adminService';
 import type { Category } from '../../types';
 import type { VegetableFormData } from '../../services/adminService';
@@ -79,8 +80,10 @@ export default function AdminVegetableFormPage() {
     try {
       if (isEdit && id) {
         await adminService.updateVegetable(id, form);
+        toast.success('Vegetable updated');
       } else {
         await adminService.createVegetable(form);
+        toast.success('Vegetable added');
       }
       navigate('/admin/vegetables');
     } catch (err: any) {

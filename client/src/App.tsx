@@ -17,6 +17,7 @@ import AdminOrderDetailPage from './pages/admin/AdminOrderDetailPage';
 import AdminCustomersPage from './pages/admin/AdminCustomersPage';
 import AdminCustomerDetailPage from './pages/admin/AdminCustomerDetailPage';
 import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminSharePage from './pages/admin/AdminSharePage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="vegetables" element={<AdminVegetablesPage />} />
         <Route path="vegetables/new" element={<AdminVegetableFormPage />} />
         <Route path="vegetables/:id/edit" element={<AdminVegetableFormPage />} />
+        <Route path="categories" element={<AdminCategoriesPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="orders/:id" element={<AdminOrderDetailPage />} />
         <Route path="customers" element={<AdminCustomersPage />} />

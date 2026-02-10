@@ -11,10 +11,10 @@ export default function CategoryFilter({ categories, selectedId, onSelect }: Cat
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
       <button
         onClick={() => onSelect(null)}
-        className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition ${
+        className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 active:scale-95 ${
           selectedId === null
-            ? 'bg-primary-green text-white'
-            : 'bg-white text-text-dark border border-gray-200 hover:border-primary-green'
+            ? 'bg-gradient-green text-white shadow-glow-green'
+            : 'bg-white text-text-dark border border-gray-200 hover:border-primary-green hover:text-primary-green'
         }`}
       >
         All
@@ -23,15 +23,15 @@ export default function CategoryFilter({ categories, selectedId, onSelect }: Cat
         <button
           key={cat.id}
           onClick={() => onSelect(cat.id)}
-          className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition ${
+          className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 active:scale-95 ${
             selectedId === cat.id
-              ? 'bg-primary-green text-white'
-              : 'bg-white text-text-dark border border-gray-200 hover:border-primary-green'
+              ? 'bg-gradient-green text-white shadow-glow-green'
+              : 'bg-white text-text-dark border border-gray-200 hover:border-primary-green hover:text-primary-green'
           }`}
         >
           {cat.name}
           {cat._count && (
-            <span className="ml-1 text-xs opacity-70">({cat._count.vegetables})</span>
+            <span className="ml-1.5 text-xs opacity-70">({cat._count.vegetables})</span>
           )}
         </button>
       ))}

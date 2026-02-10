@@ -146,6 +146,35 @@ export const adminUpdateVegetable = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
+const bulkStockSchema = z.object({
+  updates: z.array(
+    z.object({
+      id: z.string().uuid(),
+      stockKg: z.number().nonnegative(),
+    })
+  ),
+});
+
+export const adminBulkUpdateStock = async (req: Request, res: Response) => {
+  const { updates } = bulkStockSchema.parse(req.body);
+
+  await prisma.$transaction(
+    updates.map((u) =>
+      prisma.vegetable.update({
+        where: { id: u.id },
+        data: { stockKg: u.stockKg },
+      })
+    )
+  );
+
+  const vegetables = await prisma.vegetable.findMany({
+    include: vegetableInclude,
+    orderBy: { name: 'asc' },
+  });
+
+  res.json(vegetables);
+};
+
 export const adminDeleteVegetable = async (req: Request, res: Response) => {
   const id = req.params.id as string;
 

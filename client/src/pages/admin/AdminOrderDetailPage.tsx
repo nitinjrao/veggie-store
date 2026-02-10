@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { adminService } from '../../services/adminService';
 import type { AdminOrder } from '../../services/adminService';
 import type { OrderStatus } from '../../types';
@@ -50,7 +51,9 @@ export default function AdminOrderDetailPage() {
     try {
       const updated = await adminService.updateOrderStatus(id, status);
       setOrder(updated);
+      toast.success(`Order ${status === 'CANCELLED' ? 'cancelled' : 'updated to ' + status.replace(/_/g, ' ').toLowerCase()}`);
     } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to update status');
       setError(err.response?.data?.error || 'Failed to update status');
     } finally {
       setUpdating(false);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
 import { orderService } from '../../services/orderService';
@@ -61,7 +62,9 @@ export default function CartPage() {
       clearCart();
       navigate(`/orders/${order.id}/confirmation`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to place order. Please try again.');
+      const msg = err.response?.data?.message || 'Failed to place order. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -71,15 +74,18 @@ export default function CartPage() {
     return (
       <>
         <Header />
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h2 className="text-xl font-semibold text-text-dark mb-2">Your cart is empty</h2>
-          <p className="text-text-muted mb-6">Add some fresh vegetables to get started!</p>
+        <div className="max-w-2xl mx-auto px-4 py-16 text-center animate-fade-in">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+            <ShoppingBag className="w-12 h-12 text-gray-300" />
+          </div>
+          <h2 className="text-xl font-bold text-text-dark mb-2">Your cart is empty</h2>
+          <p className="text-text-muted mb-8">Add some fresh vegetables to get started!</p>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-green text-white font-medium hover:bg-primary-green-dark transition"
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-green text-white font-medium hover:shadow-glow-green transition-all active:scale-95"
           >
             Browse Vegetables
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </>
@@ -90,17 +96,22 @@ export default function CartPage() {
     <>
       <Header />
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-text-dark mb-6">Shopping Cart</h1>
+        <h1 className="text-2xl font-bold text-text-dark mb-6">
+          Shopping Cart
+          <span className="ml-2 text-sm font-normal text-text-muted">
+            ({items.length} item{items.length !== 1 ? 's' : ''})
+          </span>
+        </h1>
 
-        <div className="space-y-4 mb-8">
+        <div className="space-y-3 mb-8 stagger-children">
           {items.map((item) => {
             const availableUnits = getAvailableUnits(item.vegetable);
             return (
               <div
                 key={item.vegetableId}
-                className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4"
+                className="bg-white rounded-2xl border border-gray-100 shadow-card p-4 flex items-center gap-4 group hover:shadow-card-hover transition-all duration-200"
               >
-                <span className="text-3xl shrink-0">{item.vegetable.emoji || '🥬'}</span>
+                <span className="text-3xl shrink-0 group-hover:animate-bounce-gentle">{item.vegetable.emoji || '🥬'}</span>
 
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm text-text-dark">{item.vegetable.name}</h3>
@@ -112,7 +123,7 @@ export default function CartPage() {
                     <select
                       value={item.unit}
                       onChange={(e) => updateUnit(item.vegetableId, e.target.value as UnitType)}
-                      className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-primary-green"
+                      className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-green/40 transition-all"
                     >
                       {UNIT_OPTIONS.filter((u) => availableUnits.includes(u.value)).map((u) => (
                         <option key={u.value} value={u.value}>
@@ -124,14 +135,14 @@ export default function CartPage() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => decrementItem(item.vegetableId)}
-                        className="w-7 h-7 flex items-center justify-center rounded-md bg-gray-100 hover:bg-gray-200 transition"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition-all active:scale-90"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="text-sm font-semibold w-12 text-center">{item.quantity}</span>
+                      <span className="text-sm font-bold w-12 text-center">{item.quantity}</span>
                       <button
                         onClick={() => incrementItem(item.vegetableId)}
-                        className="w-7 h-7 flex items-center justify-center rounded-md bg-primary-green hover:bg-primary-green-dark text-white transition"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-gradient-green text-white hover:shadow-glow-green transition-all active:scale-90"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -140,12 +151,12 @@ export default function CartPage() {
                 </div>
 
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-primary-green-dark">
+                  <p className="text-sm font-bold text-primary-green-dark">
                     ₹{item.totalPrice.toFixed(2)}
                   </p>
                   <button
                     onClick={() => removeItem(item.vegetableId)}
-                    className="mt-1 p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 transition"
+                    className="mt-1 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-all active:scale-90"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -155,53 +166,63 @@ export default function CartPage() {
           })}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h2 className="font-semibold text-text-dark">Delivery Details</h2>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-6 space-y-4 animate-fade-in-up">
+          <h2 className="font-bold text-text-dark">Delivery Details</h2>
 
           <div>
-            <label className="block text-sm text-text-muted mb-1">Delivery Address</label>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">Delivery Address</label>
             <textarea
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Enter your delivery address..."
               rows={2}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent resize-none"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-text-muted mb-1">Notes (optional)</label>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">Notes (optional)</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any special instructions..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
             />
           </div>
 
           <div className="border-t border-gray-100 pt-4">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-text-muted">Items ({items.length})</span>
-              <span className="font-bold text-lg text-text-dark">₹{total.toFixed(2)}</span>
+              <span className="text-text-muted">Total ({items.length} items)</span>
+              <span className="font-bold text-2xl text-text-dark">₹{total.toFixed(2)}</span>
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 mb-3">{error}</p>
+              <div className="mb-3 p-3 rounded-xl bg-red-50 text-red-600 text-sm animate-fade-in">{error}</div>
             )}
 
             {isAuthenticated ? (
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
-                className="w-full py-3 rounded-lg bg-primary-green text-white font-semibold hover:bg-primary-green-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 rounded-xl bg-gradient-green text-white font-bold text-base hover:shadow-glow-green transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
-                {loading ? 'Placing Order...' : 'Place Order'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Placing Order...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Place Order
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                )}
               </button>
             ) : (
               <Link
                 to="/login"
-                className="w-full py-3 rounded-lg bg-primary-green text-white font-semibold hover:bg-primary-green-dark transition block text-center"
+                className="w-full py-3.5 rounded-xl bg-gradient-green text-white font-bold text-base hover:shadow-glow-green transition-all block text-center active:scale-[0.98]"
               >
                 Login to Order
               </Link>

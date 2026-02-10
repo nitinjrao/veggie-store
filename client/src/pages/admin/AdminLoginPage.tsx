@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Shield } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -28,42 +28,48 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="font-heading font-bold text-xl text-center mb-1">Admin Login</h2>
-          <p className="text-sm text-text-muted text-center mb-6">Sampada Green Dashboard</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
+      <div className="w-full max-w-sm animate-fade-in-up">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-7">
+          {/* Branding */}
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-green flex items-center justify-center shadow-glow-green">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="font-heading font-bold text-xl text-text-dark">Admin Login</h2>
+            <p className="text-sm text-text-muted mt-1">Sampada Green Dashboard</p>
+          </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>
+            <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm animate-fade-in">{error}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-1">Email</label>
+              <label className="block text-sm font-medium text-text-dark mb-1.5">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@sampadagreen.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-1">Password</label>
+              <label className="block text-sm font-medium text-text-dark mb-1.5">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
                   required
                 />
               </div>
@@ -72,9 +78,16 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg bg-primary-green text-white font-medium hover:bg-primary-green-dark transition disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-gradient-green text-white font-medium hover:shadow-glow-green transition-all disabled:opacity-50 active:scale-[0.98]"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Logging in...
+                </span>
+              ) : (
+                'Login'
+              )}
             </button>
           </form>
         </div>

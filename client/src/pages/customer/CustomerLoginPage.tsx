@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Phone, KeyRound } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Phone, KeyRound, ArrowLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
 import Header from '../../components/common/Header';
@@ -57,9 +58,12 @@ export default function CustomerLoginPage() {
     try {
       const result = await authService.verifyOtp(phone, otp);
       login(result.token, result.user);
+      toast.success('Welcome back!');
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid OTP');
+      const msg = err.response?.data?.error || 'Invalid OTP';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -68,39 +72,57 @@ export default function CustomerLoginPage() {
   return (
     <>
       <Header />
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4">
-        <div className="w-full max-w-sm">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="font-heading font-bold text-xl text-center mb-6">
-              {step === 'phone' ? 'Welcome!' : 'Enter OTP'}
-            </h2>
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 bg-gradient-hero">
+        <div className="w-full max-w-sm animate-fade-in-up">
+          {/* Back link */}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-dark mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to shop
+          </Link>
+
+          <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-7">
+            {/* Branding */}
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-green-50 flex items-center justify-center">
+                <span className="text-3xl">🥬</span>
+              </div>
+              <h2 className="font-heading font-bold text-xl text-text-dark">
+                {step === 'phone' ? 'Welcome!' : 'Verify OTP'}
+              </h2>
+              <p className="text-sm text-text-muted mt-1">
+                {step === 'phone' ? 'Login to order fresh vegetables' : 'Enter the code sent to your phone'}
+              </p>
+            </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>
+              <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm animate-fade-in">{error}</div>
             )}
 
             {step === 'phone' ? (
               <form onSubmit={handlePhoneSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-text-dark mb-1">
+                  <label className="block text-sm font-medium text-text-dark mb-1.5">
                     Phone Number
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="9876543210"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
                       required
                     />
                   </div>
                 </div>
 
                 {isRegister && (
-                  <div>
-                    <label className="block text-sm font-medium text-text-dark mb-1">
+                  <div className="animate-fade-in">
+                    <label className="block text-sm font-medium text-text-dark mb-1.5">
                       Your Name
                     </label>
                     <input
@@ -108,7 +130,7 @@ export default function CustomerLoginPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter your name"
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
                     />
                   </div>
                 )}
@@ -116,18 +138,25 @@ export default function CustomerLoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 rounded-lg bg-primary-green text-white font-medium hover:bg-primary-green-dark transition disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-gradient-green text-white font-medium hover:shadow-glow-green transition-all disabled:opacity-50 active:scale-[0.98]"
                 >
-                  {loading ? 'Sending...' : isRegister ? 'Register & Get OTP' : 'Get OTP'}
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Sending...
+                    </span>
+                  ) : (
+                    isRegister ? 'Register & Get OTP' : 'Get OTP'
+                  )}
                 </button>
 
                 <p className="text-center text-xs text-text-muted">
                   {isRegister ? (
-                    <button type="button" onClick={() => setIsRegister(false)} className="text-primary-green hover:underline">
+                    <button type="button" onClick={() => setIsRegister(false)} className="text-primary-green hover:underline font-medium">
                       Already have an account? Login
                     </button>
                   ) : (
-                    <button type="button" onClick={() => setIsRegister(true)} className="text-primary-green hover:underline">
+                    <button type="button" onClick={() => setIsRegister(true)} className="text-primary-green hover:underline font-medium">
                       New here? Register
                     </button>
                   )}
@@ -135,26 +164,29 @@ export default function CustomerLoginPage() {
               </form>
             ) : (
               <form onSubmit={handleOtpSubmit} className="space-y-4">
-                <p className="text-sm text-text-muted text-center">
-                  OTP sent to <span className="font-medium text-text-dark">{phone}</span>
-                </p>
-                <p className="text-xs text-text-muted text-center">
-                  (Check server console for OTP)
-                </p>
+                <div className="text-center mb-2">
+                  <p className="text-sm text-text-muted">
+                    OTP sent to <span className="font-semibold text-text-dark">{phone}</span>
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">
+                    (Check server console for OTP)
+                  </p>
+                </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text-dark mb-1">
+                  <label className="block text-sm font-medium text-text-dark mb-1.5">
                     Enter OTP
                   </label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                     <input
                       type="text"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                       placeholder="123456"
                       maxLength={6}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                      autoFocus
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm tracking-[0.3em] font-mono focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
                       required
                     />
                   </div>
@@ -163,15 +195,22 @@ export default function CustomerLoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 rounded-lg bg-primary-green text-white font-medium hover:bg-primary-green-dark transition disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-gradient-green text-white font-medium hover:shadow-glow-green transition-all disabled:opacity-50 active:scale-[0.98]"
                 >
-                  {loading ? 'Verifying...' : 'Verify OTP'}
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Verifying...
+                    </span>
+                  ) : (
+                    'Verify OTP'
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setStep('phone'); setOtp(''); setError(''); }}
-                  className="w-full text-sm text-text-muted hover:text-text-dark"
+                  className="w-full text-sm text-text-muted hover:text-text-dark transition-colors"
                 >
                   Change phone number
                 </button>

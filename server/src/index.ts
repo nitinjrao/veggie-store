@@ -12,6 +12,7 @@ import adminDashboardRoutes from './routes/adminDashboardRoutes';
 import adminOrderRoutes from './routes/adminOrderRoutes';
 import adminCustomerRoutes from './routes/adminCustomerRoutes';
 import adminAnalyticsRoutes from './routes/adminAnalyticsRoutes';
+import adminCategoryRoutes from './routes/adminCategoryRoutes';
 import favoriteRoutes from './routes/favoriteRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -36,6 +37,7 @@ app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/favorites', favoriteRoutes);
 
 // Error handler (must be last)

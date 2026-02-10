@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Search, AlertTriangle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { adminService } from '../../services/adminService';
 import type { Vegetable } from '../../types';
 
@@ -31,8 +32,9 @@ export default function AdminVegetablesPage() {
     try {
       await adminService.deleteVegetable(id);
       setVegetables((prev) => prev.filter((v) => v.id !== id));
+      toast.success('Vegetable removed');
     } catch (err) {
-      console.error('Failed to delete:', err);
+      toast.error('Failed to delete vegetable');
     } finally {
       setDeleting(null);
     }

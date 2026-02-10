@@ -61,6 +61,23 @@ export const adminService = {
   getCategories: () =>
     api.get<Category[]>('/categories').then((r) => r.data),
 
+  // Admin Categories
+  listCategories: () =>
+    api.get<AdminCategory[]>('/admin/categories').then((r) => r.data),
+
+  createCategory: (data: CategoryFormData) =>
+    api.post<AdminCategory>('/admin/categories', data).then((r) => r.data),
+
+  updateCategory: (id: string, data: Partial<CategoryFormData>) =>
+    api.put<AdminCategory>(`/admin/categories/${id}`, data).then((r) => r.data),
+
+  deleteCategory: (id: string) =>
+    api.delete(`/admin/categories/${id}`).then((r) => r.data),
+
+  // Bulk stock
+  bulkUpdateStock: (updates: { id: string; stockKg: number }[]) =>
+    api.put<Vegetable[]>('/admin/vegetables/bulk-stock', { updates }).then((r) => r.data),
+
   // Orders
   listOrders: (params?: { page?: number; status?: string; search?: string }) =>
     api
@@ -102,6 +119,24 @@ export interface AdminOrderListItem {
 
 export interface AdminOrder extends Order {
   customer: { id: string; name: string | null; phone: string; address: string | null };
+}
+
+export interface AdminCategory {
+  id: string;
+  name: string;
+  nameHindi: string | null;
+  nameKannada: string | null;
+  image: string | null;
+  sortOrder: number;
+  _count: { vegetables: number };
+}
+
+export interface CategoryFormData {
+  name: string;
+  nameHindi?: string;
+  nameKannada?: string;
+  image?: string;
+  sortOrder?: number;
 }
 
 export interface AdminCustomersResponse {

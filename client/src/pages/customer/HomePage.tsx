@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Truck, Clock, Leaf } from 'lucide-react';
 import Header from '../../components/common/Header';
 import SearchBar from '../../components/customer/SearchBar';
 import CategoryFilter from '../../components/customer/CategoryFilter';
@@ -15,12 +16,10 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [loading, setLoading] = useState(true);
 
-  // Fetch categories on mount
   useEffect(() => {
     vegetableService.getCategories().then(setCategories).catch(console.error);
   }, []);
 
-  // Fetch vegetables based on search/category
   const fetchVegetables = useCallback(async () => {
     setLoading(true);
     try {
@@ -40,7 +39,6 @@ export default function HomePage() {
     }
   }, [searchQuery, selectedCategory]);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchVegetables();
@@ -68,15 +66,48 @@ export default function HomePage() {
   return (
     <>
       <Header onSearch={handleSearch} searchQuery={searchQuery} />
-      <div className="px-4 py-4">
+
+      {/* Hero Banner - only show when no search active */}
+      {!searchQuery && !selectedCategory && (
+        <div className="bg-gradient-hero border-b border-green-100/50">
+          <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+            <div className="text-center animate-fade-in">
+              <h1 className="font-heading font-bold text-2xl sm:text-3xl text-text-dark mb-2">
+                Fresh Vegetables, <span className="text-gradient-green">Daily Delivered</span>
+              </h1>
+              <p className="text-text-muted text-sm sm:text-base max-w-md mx-auto mb-4">
+                Farm-fresh vegetables at your doorstep. Order now for same-day delivery.
+              </p>
+              <div className="flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-text-muted">
+                <span className="flex items-center gap-1.5">
+                  <Leaf className="w-4 h-4 text-primary-green" />
+                  100% Fresh
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Truck className="w-4 h-4 text-primary-green" />
+                  Free Delivery
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-primary-green" />
+                  Same Day
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
         <SearchBar value={searchQuery} onChange={handleSearch} />
-        <div className="mb-4">
+
+        <div className="mb-5">
           <CategoryFilter
             categories={categories}
             selectedId={selectedCategory}
             onSelect={handleCategorySelect}
           />
         </div>
+
         <VegetableGrid vegetables={vegetables} loading={loading} />
       </div>
     </>
