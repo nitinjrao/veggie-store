@@ -115,6 +115,19 @@ export const adminUpdateVegetable = async (req: Request, res: Response) => {
       });
 
       if (latestPrice) {
+        // Record price history for pricePerKg changes
+        const oldPriceKg = latestPrice.pricePerKg ? Number(latestPrice.pricePerKg) : null;
+        const newPriceKg = data.price.pricePerKg ?? null;
+        if (newPriceKg !== null && oldPriceKg !== newPriceKg) {
+          await tx.priceHistory.create({
+            data: {
+              vegetableId: id,
+              oldPrice: oldPriceKg,
+              newPrice: newPriceKg,
+            },
+          });
+        }
+
         await tx.price.update({
           where: { id: latestPrice.id },
           data: {
@@ -134,6 +147,17 @@ export const adminUpdateVegetable = async (req: Request, res: Response) => {
             packetWeight: data.price.packetWeight,
           },
         });
+
+        // Record initial price
+        if (data.price.pricePerKg) {
+          await tx.priceHistory.create({
+            data: {
+              vegetableId: id,
+              oldPrice: null,
+              newPrice: data.price.pricePerKg,
+            },
+          });
+        }
       }
     }
 
@@ -173,6 +197,18 @@ export const adminBulkUpdateStock = async (req: Request, res: Response) => {
   });
 
   res.json(vegetables);
+};
+
+export const adminGetPriceHistory = async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const history = await prisma.priceHistory.findMany({
+    where: { vegetableId: id },
+    orderBy: { changedAt: 'desc' },
+    take: 50,
+  });
+
+  res.json(history);
 };
 
 export const adminDeleteVegetable = async (req: Request, res: Response) => {

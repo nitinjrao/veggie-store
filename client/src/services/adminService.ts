@@ -74,6 +74,10 @@ export const adminService = {
   deleteCategory: (id: string) =>
     api.delete(`/admin/categories/${id}`).then((r) => r.data),
 
+  // Price history
+  getPriceHistory: (vegetableId: string) =>
+    api.get<PriceHistoryItem[]>(`/admin/vegetables/${vegetableId}/price-history`).then((r) => r.data),
+
   // Bulk stock
   bulkUpdateStock: (updates: { id: string; stockKg: number }[]) =>
     api.put<Vegetable[]>('/admin/vegetables/bulk-stock', { updates }).then((r) => r.data),
@@ -137,6 +141,14 @@ export interface CategoryFormData {
   nameKannada?: string;
   image?: string;
   sortOrder?: number;
+}
+
+export interface PriceHistoryItem {
+  id: string;
+  vegetableId: string;
+  oldPrice: string | null;
+  newPrice: string;
+  changedAt: string;
 }
 
 export interface AdminCustomersResponse {

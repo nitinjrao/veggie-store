@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Package, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Package, ChevronRight, RotateCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { orderService } from '../../services/orderService';
-import type { Order, OrderStatus } from '../../types';
+import { useCartStore } from '../../stores/cartStore';
+import type { Order, OrderStatus, UnitType } from '../../types';
 import Header from '../../components/common/Header';
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
@@ -26,6 +28,21 @@ export default function OrderHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const navigate = useNavigate();
+  const addItemsFromOrder = useCartStore((s) => s.addItemsFromOrder);
+
+  const handleReorder = (e: React.MouseEvent, order: Order) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const items = order.items.map((item) => ({
+      vegetable: item.vegetable,
+      quantity: parseFloat(item.quantity),
+      unit: item.unit as UnitType,
+    }));
+    addItemsFromOrder(items);
+    toast.success('Items added to cart!');
+    navigate('/cart');
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -118,7 +135,14 @@ export default function OrderHistoryPage() {
                     <span className="text-xs text-text-muted">
                       {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={(e) => handleReorder(e, order)}
+                        className="text-xs font-medium text-primary-green hover:bg-green-50 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all active:scale-95"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Reorder
+                      </button>
                       <span className="font-bold text-primary-green-dark">
                         ₹{parseFloat(order.totalAmount).toFixed(2)}
                       </span>

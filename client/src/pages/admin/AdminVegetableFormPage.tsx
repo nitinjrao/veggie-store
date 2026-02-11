@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminService } from '../../services/adminService';
 import type { Category } from '../../types';
-import type { VegetableFormData } from '../../services/adminService';
+import type { VegetableFormData, PriceHistoryItem } from '../../services/adminService';
 
 export default function AdminVegetableFormPage() {
   const { id } = useParams();
@@ -15,6 +15,8 @@ export default function AdminVegetableFormPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryItem[]>([]);
 
   const [form, setForm] = useState<VegetableFormData>({
     name: '',
@@ -37,6 +39,11 @@ export default function AdminVegetableFormPage() {
   useEffect(() => {
     adminService.getCategories().then(setCategories).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    adminService.getPriceHistory(id).then(setPriceHistory).catch(console.error);
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -320,6 +327,44 @@ export default function AdminVegetableFormPage() {
             </div>
           </div>
         </div>
+
+        {/* Price History */}
+        {isEdit && priceHistory.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+            <h2 className="font-medium text-text-dark">Price History</h2>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {priceHistory.map((entry) => {
+                const oldP = entry.oldPrice ? parseFloat(entry.oldPrice) : null;
+                const newP = parseFloat(entry.newPrice);
+                const isUp = oldP !== null && newP > oldP;
+                const isDown = oldP !== null && newP < oldP;
+                return (
+                  <div key={entry.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                    <div className="flex items-center gap-2">
+                      {isUp ? (
+                        <TrendingUp className="w-3.5 h-3.5 text-red-500" />
+                      ) : isDown ? (
+                        <TrendingDown className="w-3.5 h-3.5 text-green-500" />
+                      ) : (
+                        <Minus className="w-3.5 h-3.5 text-gray-400" />
+                      )}
+                      <span className="text-sm text-text-muted">
+                        {oldP !== null ? `₹${oldP.toFixed(2)}` : 'Initial'} → ₹{newP.toFixed(2)}/kg
+                      </span>
+                    </div>
+                    <span className="text-xs text-text-muted">
+                      {new Date(entry.changedAt).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button

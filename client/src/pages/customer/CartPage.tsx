@@ -36,6 +36,7 @@ export default function CartPage() {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [stockError, setStockError] = useState('');
 
   const total = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
@@ -65,6 +66,12 @@ export default function CartPage() {
       const msg = err.response?.data?.message || 'Failed to place order. Please try again.';
       setError(msg);
       toast.error(msg);
+
+      // Parse stock error to highlight the affected item
+      const stockMatch = msg.match(/Insufficient stock for (.+?)\./);
+      if (stockMatch) {
+        setStockError(stockMatch[1]);
+      }
     } finally {
       setLoading(false);
     }
@@ -106,15 +113,21 @@ export default function CartPage() {
         <div className="space-y-3 mb-8 stagger-children">
           {items.map((item) => {
             const availableUnits = getAvailableUnits(item.vegetable);
+            const isStockError = stockError === item.vegetable.name;
             return (
               <div
                 key={item.vegetableId}
-                className="bg-white rounded-2xl border border-gray-100 shadow-card p-4 flex items-center gap-4 group hover:shadow-card-hover transition-all duration-200"
+                className={`bg-white rounded-2xl border shadow-card p-4 flex items-center gap-4 group hover:shadow-card-hover transition-all duration-200 ${isStockError ? 'border-red-300 bg-red-50/50 ring-1 ring-red-200' : 'border-gray-100'}`}
               >
                 <span className="text-3xl shrink-0 group-hover:animate-bounce-gentle">{item.vegetable.emoji || '🥬'}</span>
 
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm text-text-dark">{item.vegetable.name}</h3>
+                  {isStockError && (
+                    <p className="text-xs text-red-600 font-medium mt-0.5 animate-fade-in">
+                      Insufficient stock — try reducing quantity
+                    </p>
+                  )}
                   {item.vegetable.nameHindi && (
                     <p className="text-xs text-text-muted font-hindi">{item.vegetable.nameHindi}</p>
                   )}

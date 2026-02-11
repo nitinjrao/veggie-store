@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { orderService } from '../../services/orderService';
-import type { Order, OrderStatus } from '../../types';
+import { useCartStore } from '../../stores/cartStore';
+import type { Order, OrderStatus, UnitType } from '../../types';
 import Header from '../../components/common/Header';
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
@@ -23,9 +25,23 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 
 export default function OrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const addItemsFromOrder = useCartStore((s) => s.addItemsFromOrder);
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const handleReorder = () => {
+    if (!order) return;
+    const items = order.items.map((item) => ({
+      vegetable: item.vegetable,
+      quantity: parseFloat(item.quantity),
+      unit: item.unit as UnitType,
+    }));
+    addItemsFromOrder(items);
+    toast.success('Items added to cart!');
+    navigate('/cart');
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -131,6 +147,14 @@ export default function OrderDetailsPage() {
             </span>
           </div>
         </div>
+
+        <button
+          onClick={handleReorder}
+          className="w-full mb-4 py-3 rounded-xl border-2 border-primary-green text-primary-green font-semibold flex items-center justify-center gap-2 hover:bg-green-50 transition-all active:scale-[0.98]"
+        >
+          <RotateCcw className="w-4 h-4" />
+          Reorder
+        </button>
 
         {(order.address || order.notes) && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">

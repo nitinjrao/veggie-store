@@ -61,6 +61,7 @@ interface CartState {
   decrementItem: (vegetableId: string) => void;
   clearCart: () => void;
   initialize: () => void;
+  addItemsFromOrder: (items: { vegetable: Vegetable; quantity: number; unit: UnitType }[]) => void;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -162,5 +163,33 @@ export const useCartStore = create<CartState>((set, get) => ({
         localStorage.removeItem('cart');
       }
     }
+  },
+
+  addItemsFromOrder: (orderItems) => {
+    const { items } = get();
+    const newItems = [...items];
+
+    for (const oi of orderItems) {
+      const existing = newItems.find((i) => i.vegetableId === oi.vegetable.id);
+      if (existing) {
+        existing.quantity = oi.quantity;
+        existing.unit = oi.unit;
+        existing.unitPrice = getUnitPrice(oi.vegetable, oi.unit);
+        existing.totalPrice = +(oi.quantity * existing.unitPrice).toFixed(2);
+      } else {
+        const unitPrice = getUnitPrice(oi.vegetable, oi.unit);
+        newItems.push({
+          vegetableId: oi.vegetable.id,
+          vegetable: oi.vegetable,
+          quantity: oi.quantity,
+          unit: oi.unit,
+          unitPrice,
+          totalPrice: +(oi.quantity * unitPrice).toFixed(2),
+        });
+      }
+    }
+
+    persistCart(newItems);
+    set({ items: newItems });
   },
 }));
