@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Truck, Clock, Leaf, ArrowUpDown } from 'lucide-react';
+import { BadgeIndianRupee, Clock, Leaf, ArrowUpDown } from 'lucide-react';
 import Header from '../../components/common/Header';
 import SearchBar from '../../components/customer/SearchBar';
 import CategoryFilter from '../../components/customer/CategoryFilter';
@@ -94,10 +94,10 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
             <div className="text-center animate-fade-in">
               <h1 className="font-heading font-bold text-2xl sm:text-3xl text-text-dark mb-2">
-                Fresh Vegetables, <span className="text-gradient-green">Daily Delivered</span>
+                Fresh Vegetables, <span className="text-gradient-green">Straight from Farm</span>
               </h1>
               <p className="text-text-muted text-sm sm:text-base max-w-md mx-auto mb-4">
-                Farm-fresh vegetables at your doorstep. Order now for same-day delivery.
+                Farm-fresh vegetables at the best prices. Order now and enjoy quality produce.
               </p>
               <div className="flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-text-muted">
                 <span className="flex items-center gap-1.5">
@@ -105,12 +105,12 @@ export default function HomePage() {
                   100% Fresh
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Truck className="w-4 h-4 text-primary-green" />
-                  Free Delivery
+                  <BadgeIndianRupee className="w-4 h-4 text-primary-green" />
+                  Best Prices
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-primary-green" />
-                  Same Day
+                  Quick Orders
                 </span>
               </div>
             </div>
