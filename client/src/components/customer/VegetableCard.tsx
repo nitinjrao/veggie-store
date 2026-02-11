@@ -1,20 +1,54 @@
+import { useState } from 'react';
 import { ShoppingCart, Plus, Minus, Heart } from 'lucide-react';
-import type { Vegetable } from '../../types';
+import type { Vegetable, UnitType } from '../../types';
 import { useCartStore } from '../../stores/cartStore';
 import { useFavoriteStore } from '../../stores/favoriteStore';
 import { useAuthStore } from '../../stores/authStore';
+import { getAvailableUnits, UNIT_LABELS } from '../../utils/pricing';
 
 interface VegetableCardProps {
   vegetable: Vegetable;
 }
 
+function getDisplayPrice(vegetable: Vegetable, unit: UnitType): number | null {
+  const price = vegetable.prices[0];
+  if (!price) return null;
+  switch (unit) {
+    case 'KG':
+    case 'GRAM':
+      return price.pricePerKg ? parseFloat(price.pricePerKg) : null;
+    case 'PIECE':
+      return price.pricePerPiece ? parseFloat(price.pricePerPiece) : null;
+    case 'PACKET':
+      return price.pricePerPacket ? parseFloat(price.pricePerPacket) : null;
+    case 'BUNDLE':
+      return price.pricePerBundle ? parseFloat(price.pricePerBundle) : null;
+    default:
+      return null;
+  }
+}
+
+function getUnitSuffix(unit: UnitType): string {
+  switch (unit) {
+    case 'KG': return '/kg';
+    case 'GRAM': return '/kg';
+    case 'PIECE': return '/piece';
+    case 'PACKET': return '/packet';
+    case 'BUNDLE': return '/bundle';
+    default: return '';
+  }
+}
+
 export default function VegetableCard({ vegetable }: VegetableCardProps) {
   const price = vegetable.prices[0];
-  const pricePerKg = price?.pricePerKg ? parseFloat(price.pricePerKg) : null;
-  const pricePerPacket = price?.pricePerPacket ? parseFloat(price.pricePerPacket) : null;
-  const pricePerPiece = price?.pricePerPiece ? parseFloat(price.pricePerPiece) : null;
-  const pricePerBundle = price?.pricePerBundle ? parseFloat(price.pricePerBundle) : null;
   const packetWeight = price?.packetWeight ? parseFloat(price.packetWeight) : null;
+
+  const availableUnits = getAvailableUnits(vegetable);
+  // For the pill selector, collapse KG+GRAM into just KG since GRAM is a sub-unit
+  const selectableUnits = availableUnits.filter((u) => u !== 'GRAM');
+  const hasMultipleUnits = selectableUnits.length > 1;
+
+  const [selectedUnit, setSelectedUnit] = useState<UnitType>(selectableUnits[0] || 'KG');
 
   const cartItem = useCartStore((s) => s.items.find((i) => i.vegetableId === vegetable.id));
   const addItem = useCartStore((s) => s.addItem);
@@ -27,6 +61,9 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
   const toggleFav = useFavoriteStore((s) => s.toggle);
 
   const showFav = isAuthenticated && userRole === 'customer';
+
+  const displayPrice = getDisplayPrice(vegetable, selectedUnit);
+  const unitSuffix = getUnitSuffix(selectedUnit);
 
   return (
     <div className="group bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-4 flex flex-col relative overflow-hidden">
@@ -62,23 +99,36 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
 
       {/* Price section */}
       <div className="mt-auto pt-3 space-y-0.5 relative z-10">
-        {pricePerKg !== null && (
+        {displayPrice !== null && (
           <p className="text-base font-bold text-primary-green-dark">
-            ₹{pricePerKg}<span className="text-xs font-medium text-text-muted">/kg</span>
+            ₹{displayPrice}<span className="text-xs font-medium text-text-muted">{unitSuffix}</span>
           </p>
         )}
-        {pricePerPacket !== null && (
+        {selectedUnit === 'KG' && price?.pricePerPacket && packetWeight && (
           <p className="text-xs text-text-muted">
-            ₹{pricePerPacket}/packet{packetWeight ? ` (${packetWeight}kg)` : ''}
+            ₹{parseFloat(price.pricePerPacket)}/packet ({packetWeight}kg)
           </p>
-        )}
-        {pricePerPiece !== null && (
-          <p className="text-xs text-text-muted">₹{pricePerPiece}/piece</p>
-        )}
-        {pricePerBundle !== null && (
-          <p className="text-xs text-text-muted">₹{pricePerBundle}/bundle</p>
         )}
       </div>
+
+      {/* Unit selector pills */}
+      {hasMultipleUnits && !cartItem && (
+        <div className="flex gap-1 mt-2 relative z-10">
+          {selectableUnits.map((unit) => (
+            <button
+              key={unit}
+              onClick={() => setSelectedUnit(unit)}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                selectedUnit === unit
+                  ? 'bg-primary-green-dark text-white shadow-sm'
+                  : 'bg-gray-100 text-text-muted hover:bg-gray-200'
+              }`}
+            >
+              {UNIT_LABELS[unit]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Cart controls */}
       <div className="relative z-10">
@@ -102,7 +152,7 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
           </div>
         ) : (
           <button
-            onClick={() => addItem(vegetable)}
+            onClick={() => addItem(vegetable, selectedUnit)}
             className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-green text-white text-sm font-medium hover:shadow-glow-green transition-all active:scale-[0.97]"
           >
             <ShoppingCart className="w-4 h-4" />

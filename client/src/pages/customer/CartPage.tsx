@@ -7,28 +7,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { orderService } from '../../services/orderService';
 import type { UnitType } from '../../types';
 import Header from '../../components/common/Header';
-
-const UNIT_OPTIONS: { value: UnitType; label: string }[] = [
-  { value: 'KG', label: 'Kg' },
-  { value: 'GRAM', label: 'Gram' },
-  { value: 'PIECE', label: 'Piece' },
-  { value: 'PACKET', label: 'Packet' },
-  { value: 'BUNDLE', label: 'Bundle' },
-];
-
-function getAvailableUnits(vegetable: { prices: { pricePerKg: string | null; pricePerPiece: string | null; pricePerPacket: string | null; pricePerBundle: string | null }[] }): UnitType[] {
-  const price = vegetable.prices[0];
-  if (!price) return ['KG'];
-  const units: UnitType[] = [];
-  if (price.pricePerKg) {
-    units.push('KG');
-    units.push('GRAM');
-  }
-  if (price.pricePerPiece) units.push('PIECE');
-  if (price.pricePerPacket) units.push('PACKET');
-  if (price.pricePerBundle) units.push('BUNDLE');
-  return units.length > 0 ? units : ['KG'];
-}
+import { getAvailableUnits, UNIT_LABELS } from '../../utils/pricing';
 
 export default function CartPage() {
   const { items, removeItem, incrementItem, decrementItem, updateUnit, clearCart } = useCartStore();
@@ -140,9 +119,9 @@ export default function CartPage() {
                       onChange={(e) => updateUnit(item.vegetableId, e.target.value as UnitType)}
                       className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-green/40 transition-all"
                     >
-                      {UNIT_OPTIONS.filter((u) => availableUnits.includes(u.value)).map((u) => (
-                        <option key={u.value} value={u.value}>
-                          {u.label}
+                      {availableUnits.map((u) => (
+                        <option key={u} value={u}>
+                          {UNIT_LABELS[u]}
                         </option>
                       ))}
                     </select>

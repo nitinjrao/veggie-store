@@ -58,7 +58,7 @@ function persistCart(items: CartItem[]) {
 
 interface CartState {
   items: CartItem[];
-  addItem: (vegetable: Vegetable) => void;
+  addItem: (vegetable: Vegetable, unit?: UnitType) => void;
   removeItem: (vegetableId: string) => void;
   updateQuantity: (vegetableId: string, quantity: number) => void;
   updateUnit: (vegetableId: string, unit: UnitType) => void;
@@ -72,7 +72,7 @@ interface CartState {
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
-  addItem: (vegetable: Vegetable) => {
+  addItem: (vegetable: Vegetable, preferredUnit?: UnitType) => {
     const { items } = get();
     const existing = items.find((i) => i.vegetableId === vegetable.id);
     if (existing) {
@@ -86,7 +86,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       persistCart(newItems);
       set({ items: newItems });
     } else {
-      const unit = getDefaultUnit(vegetable);
+      const unit = preferredUnit ?? getDefaultUnit(vegetable);
       const quantity = getDefaultQuantity(unit);
       const unitPrice = getUnitPrice(vegetable, unit);
       const newItem: CartItem = {
