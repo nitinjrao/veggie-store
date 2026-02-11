@@ -58,7 +58,9 @@ export const customerRegister = async (req: Request, res: Response) => {
 
   const otp = generateOtp();
   otpStore.set(phone, { otp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
-  console.log(`[OTP] ${phone}: ${otp}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[OTP] ${phone}: ${otp}`);
+  }
 
   res.status(201).json({ message: 'OTP sent to your phone', phone });
 };
@@ -78,7 +80,9 @@ export const customerLogin = async (req: Request, res: Response) => {
 
   const otp = generateOtp();
   otpStore.set(phone, { otp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
-  console.log(`[OTP] ${phone}: ${otp}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[OTP] ${phone}: ${otp}`);
+  }
 
   res.json({ message: 'OTP sent to your phone', phone });
 };
