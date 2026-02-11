@@ -87,6 +87,15 @@ app.use('/api/favorites', favoriteRoutes);
 // Error handler (must be last)
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  // Startup DB check
+  try {
+    const { prisma } = await import('./lib/prisma');
+    const cats = await prisma.category.count();
+    const vegs = await prisma.vegetable.count();
+    console.log(`DB check: ${cats} categories, ${vegs} vegetables`);
+  } catch (e) {
+    console.error('DB check failed:', e);
+  }
 });
