@@ -74,6 +74,16 @@ export const adminService = {
   deleteCategory: (id: string) =>
     api.delete(`/admin/categories/${id}`).then((r) => r.data),
 
+  // Image upload
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const { data } = await api.post<{ url: string }>('/admin/vegetables/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data.url;
+  },
+
   // Price history
   getPriceHistory: (vegetableId: string) =>
     api.get<PriceHistoryItem[]>(`/admin/vegetables/${vegetableId}/price-history`).then((r) => r.data),

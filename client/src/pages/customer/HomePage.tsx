@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Truck, Clock, Leaf } from 'lucide-react';
+import { Truck, Clock, Leaf, ArrowUpDown } from 'lucide-react';
 import Header from '../../components/common/Header';
 import SearchBar from '../../components/customer/SearchBar';
 import CategoryFilter from '../../components/customer/CategoryFilter';
@@ -14,6 +14,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [sortBy, setSortBy] = useState<'name' | 'price-low' | 'price-high'>('name');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,6 +64,26 @@ export default function HomePage() {
     setSearchQuery('');
   };
 
+  const sortedVegetables = useMemo(() => {
+    const sorted = [...vegetables];
+    switch (sortBy) {
+      case 'price-low':
+        return sorted.sort((a, b) => {
+          const pa = a.prices[0]?.pricePerKg ? parseFloat(a.prices[0].pricePerKg) : Infinity;
+          const pb = b.prices[0]?.pricePerKg ? parseFloat(b.prices[0].pricePerKg) : Infinity;
+          return pa - pb;
+        });
+      case 'price-high':
+        return sorted.sort((a, b) => {
+          const pa = a.prices[0]?.pricePerKg ? parseFloat(a.prices[0].pricePerKg) : 0;
+          const pb = b.prices[0]?.pricePerKg ? parseFloat(b.prices[0].pricePerKg) : 0;
+          return pb - pa;
+        });
+      default:
+        return sorted;
+    }
+  }, [vegetables, sortBy]);
+
   return (
     <>
       <Header onSearch={handleSearch} searchQuery={searchQuery} />
@@ -100,15 +121,27 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
         <SearchBar value={searchQuery} onChange={handleSearch} />
 
-        <div className="mb-5">
+        <div className="flex items-center justify-between mb-5">
           <CategoryFilter
             categories={categories}
             selectedId={selectedCategory}
             onSelect={handleCategorySelect}
           />
+          <div className="flex items-center gap-1.5 shrink-0 ml-3">
+            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-green/40 transition-all"
+            >
+              <option value="name">Name A-Z</option>
+              <option value="price-low">Price: Low-High</option>
+              <option value="price-high">Price: High-Low</option>
+            </select>
+          </div>
         </div>
 
-        <VegetableGrid vegetables={vegetables} loading={loading} />
+        <VegetableGrid vegetables={sortedVegetables} loading={loading} />
       </div>
     </>
   );

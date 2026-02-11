@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ArrowLeft, Save, TrendingUp, TrendingDown, Minus, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminService } from '../../services/adminService';
 import type { Category } from '../../types';
@@ -17,6 +17,8 @@ export default function AdminVegetableFormPage() {
   const [error, setError] = useState('');
 
   const [priceHistory, setPriceHistory] = useState<PriceHistoryItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [form, setForm] = useState<VegetableFormData>({
     name: '',
@@ -56,6 +58,7 @@ export default function AdminVegetableFormPage() {
           setError('Vegetable not found');
           return;
         }
+        if (veg.image) setImagePreview(veg.image);
         const price = veg.prices?.[0];
         setForm({
           name: veg.name,
@@ -102,6 +105,23 @@ export default function AdminVegetableFormPage() {
 
   const updateField = <K extends keyof VegetableFormData>(key: K, value: VegetableFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await adminService.uploadImage(file);
+      updateField('image', url);
+      setImagePreview(url);
+      toast.success('Image uploaded');
+    } catch {
+      toast.error('Failed to upload image');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const updatePrice = (key: string, value: string) => {
@@ -216,6 +236,47 @@ export default function AdminVegetableFormPage() {
               rows={2}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green resize-none"
             />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-text-dark mb-1">Image</label>
+            <div className="flex items-start gap-4">
+              {imagePreview && (
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => { setImagePreview(null); updateField('image', undefined); }}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              <label className="flex-1 cursor-pointer">
+                <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-primary-green hover:bg-green-50/30 transition-all">
+                  {uploading ? (
+                    <div className="flex items-center justify-center gap-2 text-sm text-text-muted">
+                      <div className="w-4 h-4 border-2 border-primary-green border-t-transparent rounded-full animate-spin" />
+                      Uploading...
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 text-sm text-text-muted">
+                      <Upload className="w-4 h-4" />
+                      Click to upload image
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

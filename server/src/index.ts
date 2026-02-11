@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import authRoutes from './routes/authRoutes';
 import vegetableRoutes from './routes/vegetableRoutes';
 import categoryRoutes from './routes/categoryRoutes';
@@ -48,6 +49,9 @@ const authLimiter = rateLimit({
 });
 
 app.use('/api/auth', authLimiter);
+
+// Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check
 app.get('/api/health', (_req, res) => {

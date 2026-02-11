@@ -199,6 +199,14 @@ export const adminBulkUpdateStock = async (req: Request, res: Response) => {
   res.json(vegetables);
 };
 
+export const adminUploadImage = async (req: Request, res: Response) => {
+  if (!req.file) {
+    throw new ApiError(400, 'No image file provided');
+  }
+  const url = `/uploads/${req.file.filename}`;
+  res.json({ url });
+};
+
 export const adminGetPriceHistory = async (req: Request, res: Response) => {
   const id = req.params.id as string;
 
