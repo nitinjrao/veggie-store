@@ -11,6 +11,7 @@ COPY . .
 
 RUN npx prisma generate
 RUN npm run build
+RUN npx tsc prisma/seed.ts --outDir dist/prisma --esModuleInterop --skipLibCheck --resolveJsonModule
 
 FROM node:20-alpine
 
