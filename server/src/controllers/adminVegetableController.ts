@@ -27,6 +27,7 @@ const createVegetableSchema = z.object({
       pricePerKg: z.number().nonnegative().optional(),
       pricePerPiece: z.number().nonnegative().optional(),
       pricePerPacket: z.number().nonnegative().optional(),
+      pricePerBundle: z.number().nonnegative().optional(),
       packetWeight: z.number().nonnegative().optional(),
     })
     .optional(),
@@ -68,6 +69,7 @@ export const adminCreateVegetable = async (req: Request, res: Response) => {
           pricePerKg: data.price.pricePerKg,
           pricePerPiece: data.price.pricePerPiece,
           pricePerPacket: data.price.pricePerPacket,
+          pricePerBundle: data.price.pricePerBundle,
           packetWeight: data.price.packetWeight,
         },
       });
@@ -134,6 +136,7 @@ export const adminUpdateVegetable = async (req: Request, res: Response) => {
             pricePerKg: data.price.pricePerKg ?? undefined,
             pricePerPiece: data.price.pricePerPiece ?? undefined,
             pricePerPacket: data.price.pricePerPacket ?? undefined,
+            pricePerBundle: data.price.pricePerBundle ?? undefined,
             packetWeight: data.price.packetWeight ?? undefined,
           },
         });
@@ -144,6 +147,7 @@ export const adminUpdateVegetable = async (req: Request, res: Response) => {
             pricePerKg: data.price.pricePerKg,
             pricePerPiece: data.price.pricePerPiece,
             pricePerPacket: data.price.pricePerPacket,
+            pricePerBundle: data.price.pricePerBundle,
             packetWeight: data.price.packetWeight,
           },
         });

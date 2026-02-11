@@ -16,6 +16,7 @@ export interface Price {
   pricePerKg: string | null;
   pricePerPiece: string | null;
   pricePerPacket: string | null;
+  pricePerBundle: string | null;
   packetWeight: string | null;
   effectiveFrom: string;
 }
@@ -44,7 +45,7 @@ export interface User {
   email?: string;
 }
 
-export type UnitType = 'KG' | 'GRAM' | 'PIECE' | 'BUNCH' | 'PACKET';
+export type UnitType = 'KG' | 'GRAM' | 'PIECE' | 'BUNCH' | 'PACKET' | 'BUNDLE';
 
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
 

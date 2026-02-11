@@ -13,9 +13,10 @@ const UNIT_OPTIONS: { value: UnitType; label: string }[] = [
   { value: 'GRAM', label: 'Gram' },
   { value: 'PIECE', label: 'Piece' },
   { value: 'PACKET', label: 'Packet' },
+  { value: 'BUNDLE', label: 'Bundle' },
 ];
 
-function getAvailableUnits(vegetable: { prices: { pricePerKg: string | null; pricePerPiece: string | null; pricePerPacket: string | null }[] }): UnitType[] {
+function getAvailableUnits(vegetable: { prices: { pricePerKg: string | null; pricePerPiece: string | null; pricePerPacket: string | null; pricePerBundle: string | null }[] }): UnitType[] {
   const price = vegetable.prices[0];
   if (!price) return ['KG'];
   const units: UnitType[] = [];
@@ -25,6 +26,7 @@ function getAvailableUnits(vegetable: { prices: { pricePerKg: string | null; pri
   }
   if (price.pricePerPiece) units.push('PIECE');
   if (price.pricePerPacket) units.push('PACKET');
+  if (price.pricePerBundle) units.push('BUNDLE');
   return units.length > 0 ? units : ['KG'];
 }
 

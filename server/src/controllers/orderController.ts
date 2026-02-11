@@ -10,7 +10,7 @@ const placeOrderSchema = z.object({
       z.object({
         vegetableId: z.string().uuid(),
         quantity: z.number().positive(),
-        unit: z.enum(['KG', 'GRAM', 'PIECE', 'BUNCH', 'PACKET']),
+        unit: z.enum(['KG', 'GRAM', 'PIECE', 'BUNCH', 'PACKET', 'BUNDLE']),
       })
     )
     .min(1, 'At least one item is required'),
@@ -56,7 +56,7 @@ export const placeOrder = async (req: Request, res: Response) => {
     const orderItems: {
       vegetableId: string;
       quantity: Decimal;
-      unit: 'KG' | 'GRAM' | 'PIECE' | 'BUNCH' | 'PACKET';
+      unit: 'KG' | 'GRAM' | 'PIECE' | 'BUNCH' | 'PACKET' | 'BUNDLE';
       unitPrice: Decimal;
       totalPrice: Decimal;
       stockDeductKg: Decimal;
@@ -102,6 +102,11 @@ export const placeOrder = async (req: Request, res: Response) => {
           stockDeductKg = price.packetWeight
             ? new Decimal(item.quantity).mul(price.packetWeight)
             : new Decimal(item.quantity).mul(0.5);
+          break;
+        case 'BUNDLE':
+          if (!price.pricePerBundle) throw new ApiError(400, `${veg.name} is not sold by bundle`);
+          unitPrice = price.pricePerBundle;
+          stockDeductKg = new Decimal(item.quantity).mul(0.5);
           break;
         default:
           if (!price.pricePerKg) throw new ApiError(400, `${veg.name} has no applicable price`);

@@ -13,6 +13,7 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
   const pricePerKg = price?.pricePerKg ? parseFloat(price.pricePerKg) : null;
   const pricePerPacket = price?.pricePerPacket ? parseFloat(price.pricePerPacket) : null;
   const pricePerPiece = price?.pricePerPiece ? parseFloat(price.pricePerPiece) : null;
+  const pricePerBundle = price?.pricePerBundle ? parseFloat(price.pricePerBundle) : null;
   const packetWeight = price?.packetWeight ? parseFloat(price.packetWeight) : null;
 
   const cartItem = useCartStore((s) => s.items.find((i) => i.vegetableId === vegetable.id));
@@ -73,6 +74,9 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
         )}
         {pricePerPiece !== null && (
           <p className="text-xs text-text-muted">₹{pricePerPiece}/piece</p>
+        )}
+        {pricePerBundle !== null && (
+          <p className="text-xs text-text-muted">₹{pricePerBundle}/bundle</p>
         )}
       </div>
 
