@@ -182,8 +182,8 @@ export default function AdminAnalyticsPage() {
               <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
               <Tooltip
-                formatter={(value: number) => [formatCurrency(value), 'Revenue']}
-                labelFormatter={formatDate}
+                formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                labelFormatter={(label: any) => formatDate(String(label))}
               />
               <Line
                 type="monotone"
@@ -216,7 +216,7 @@ export default function AdminAnalyticsPage() {
                   tick={{ fontSize: 11 }}
                   width={80}
                 />
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
+                <Tooltip formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']} />
                 <Bar dataKey="totalRevenue" fill="#22c55e" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
