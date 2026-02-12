@@ -1,6 +1,2 @@
 [build]
-builder = "nixpacks"
-buildCommand = "npm install --include=dev && npx prisma generate && npm run build"
-
-[deploy]
-startCommand = "prisma migrate deploy && node dist/index.js"
+builder = "dockerfile"
