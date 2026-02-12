@@ -82,6 +82,7 @@ async function main() {
       categoryName: 'Leafy Greens',
       stockKg: 25,
       pricePerKg: 40,
+      pricePerBunch: 15,
       pricePerPacket: 20,
       packetWeight: 0.5,
     },
@@ -93,6 +94,7 @@ async function main() {
       categoryName: 'Leafy Greens',
       stockKg: 15,
       pricePerKg: 60,
+      pricePerBunch: 20,
       pricePerPacket: 30,
       packetWeight: 0.5,
     },
@@ -104,6 +106,7 @@ async function main() {
       categoryName: 'Leafy Greens',
       stockKg: 10,
       pricePerKg: 80,
+      pricePerBunch: 10,
       pricePerPacket: 10,
       packetWeight: 0.1,
     },
@@ -115,6 +118,7 @@ async function main() {
       categoryName: 'Leafy Greens',
       stockKg: 20,
       pricePerKg: 40,
+      pricePerBunch: 15,
       pricePerPacket: 20,
       packetWeight: 0.5,
     },
@@ -274,7 +278,7 @@ async function main() {
   ];
 
   for (const veg of vegetables) {
-    const { categoryName, stockKg, pricePerKg, pricePerPiece, pricePerPacket, packetWeight, ...vegData } = veg;
+    const { categoryName, stockKg, pricePerKg, pricePerPiece, pricePerPacket, pricePerBunch, packetWeight, ...vegData } = veg;
     const categoryId = categoryMap[categoryName];
 
     // Check if vegetable already exists (idempotent)
@@ -293,11 +297,28 @@ async function main() {
               pricePerKg: pricePerKg ?? undefined,
               pricePerPiece: pricePerPiece ?? undefined,
               pricePerPacket: pricePerPacket ?? undefined,
+              pricePerBunch: pricePerBunch ?? undefined,
               packetWeight: packetWeight ?? undefined,
             },
           },
         },
       });
+    } else {
+      // Update existing vegetable's latest price with new fields
+      const latestPrice = await prisma.price.findFirst({
+        where: { vegetableId: existing.id },
+        orderBy: { effectiveFrom: 'desc' },
+      });
+      if (latestPrice) {
+        await prisma.price.update({
+          where: { id: latestPrice.id },
+          data: {
+            pricePerBunch: pricePerBunch ?? undefined,
+            pricePerPacket: pricePerPacket ?? latestPrice.pricePerPacket ?? undefined,
+            packetWeight: packetWeight ?? latestPrice.packetWeight ?? undefined,
+          },
+        });
+      }
     }
   }
   console.log('20 vegetables with prices seeded');

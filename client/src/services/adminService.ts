@@ -39,6 +39,7 @@ export interface VegetableFormData {
     pricePerPiece?: number;
     pricePerPacket?: number;
     pricePerBundle?: number;
+    pricePerBunch?: number;
     packetWeight?: number;
   };
 }

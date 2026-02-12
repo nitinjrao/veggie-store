@@ -108,6 +108,11 @@ export const placeOrder = async (req: Request, res: Response) => {
           unitPrice = price.pricePerBundle;
           stockDeductKg = new Decimal(item.quantity).mul(0.5);
           break;
+        case 'BUNCH':
+          if (!price.pricePerBunch) throw new ApiError(400, `${veg.name} is not sold by bunch`);
+          unitPrice = price.pricePerBunch;
+          stockDeductKg = new Decimal(item.quantity).mul(0.5);
+          break;
         default:
           if (!price.pricePerKg) throw new ApiError(400, `${veg.name} has no applicable price`);
           unitPrice = price.pricePerKg;

@@ -35,6 +35,7 @@ export default function AdminVegetableFormPage() {
       pricePerPiece: undefined,
       pricePerPacket: undefined,
       pricePerBundle: undefined,
+      pricePerBunch: undefined,
       packetWeight: undefined,
     },
   });
@@ -76,6 +77,7 @@ export default function AdminVegetableFormPage() {
             pricePerPiece: price?.pricePerPiece ? Number(price.pricePerPiece) : undefined,
             pricePerPacket: price?.pricePerPacket ? Number(price.pricePerPacket) : undefined,
             pricePerBundle: price?.pricePerBundle ? Number(price.pricePerBundle) : undefined,
+            pricePerBunch: price?.pricePerBunch ? Number(price.pricePerBunch) : undefined,
             packetWeight: price?.packetWeight ? Number(price.packetWeight) : undefined,
           },
         });
@@ -398,6 +400,19 @@ export default function AdminVegetableFormPage() {
                 min="0"
                 value={form.price?.pricePerBundle ?? ''}
                 onChange={(e) => updatePrice('pricePerBundle', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-dark mb-1">
+                Price per Bunch (₹)
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={form.price?.pricePerBunch ?? ''}
+                onChange={(e) => updatePrice('pricePerBunch', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
               />
             </div>

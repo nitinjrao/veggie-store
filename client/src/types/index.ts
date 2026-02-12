@@ -17,6 +17,7 @@ export interface Price {
   pricePerPiece: string | null;
   pricePerPacket: string | null;
   pricePerBundle: string | null;
+  pricePerBunch: string | null;
   packetWeight: string | null;
   effectiveFrom: string;
 }

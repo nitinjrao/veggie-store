@@ -114,6 +114,8 @@ export const adminUpdateOrderStatus = async (req: Request, res: Response) => {
           restoreKg = item.quantity.div(1000);
         } else if (item.unit === 'PACKET') {
           restoreKg = item.quantity.mul(0.5); // approximate
+        } else if (item.unit === 'BUNCH') {
+          restoreKg = item.quantity.mul(0.5); // approximate
         } else if (item.unit === 'PIECE') {
           restoreKg = item.quantity.mul(0.5);
         } else {

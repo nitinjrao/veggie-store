@@ -23,6 +23,8 @@ function getDisplayPrice(vegetable: Vegetable, unit: UnitType): number | null {
       return price.pricePerPacket ? parseFloat(price.pricePerPacket) : null;
     case 'BUNDLE':
       return price.pricePerBundle ? parseFloat(price.pricePerBundle) : null;
+    case 'BUNCH':
+      return price.pricePerBunch ? parseFloat(price.pricePerBunch) : null;
     default:
       return null;
   }
@@ -35,6 +37,7 @@ function getUnitSuffix(unit: UnitType): string {
     case 'PIECE': return '/piece';
     case 'PACKET': return '/packet';
     case 'BUNDLE': return '/bundle';
+    case 'BUNCH': return '/bunch';
     default: return '';
   }
 }

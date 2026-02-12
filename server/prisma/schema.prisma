@@ -102,6 +102,7 @@ model Price {
   pricePerPiece Decimal? @map("price_per_piece") @db.Decimal(10, 2)
   pricePerPacket Decimal? @map("price_per_packet") @db.Decimal(10, 2)
   pricePerBundle Decimal? @map("price_per_bundle") @db.Decimal(10, 2)
+  pricePerBunch  Decimal? @map("price_per_bunch") @db.Decimal(10, 2)
   packetWeight  Decimal? @map("packet_weight") @db.Decimal(10, 3)
   effectiveFrom DateTime @default(now()) @map("effective_from")
   createdAt     DateTime @default(now()) @map("created_at")

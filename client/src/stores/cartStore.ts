@@ -15,6 +15,8 @@ function getUnitPrice(vegetable: Vegetable, unit: UnitType): number {
       return price.pricePerPacket ? parseFloat(price.pricePerPacket) : 0;
     case 'BUNDLE':
       return price.pricePerBundle ? parseFloat(price.pricePerBundle) : 0;
+    case 'BUNCH':
+      return price.pricePerBunch ? parseFloat(price.pricePerBunch) : 0;
     default:
       return price.pricePerKg ? parseFloat(price.pricePerKg) : 0;
   }
@@ -27,6 +29,7 @@ function getDefaultUnit(vegetable: Vegetable): UnitType {
   if (price.pricePerPiece) return 'PIECE';
   if (price.pricePerPacket) return 'PACKET';
   if (price.pricePerBundle) return 'BUNDLE';
+  if (price.pricePerBunch) return 'BUNCH';
   return 'KG';
 }
 
@@ -37,6 +40,7 @@ function getDefaultQuantity(unit: UnitType): number {
     case 'PIECE': return 1;
     case 'PACKET': return 1;
     case 'BUNDLE': return 1;
+    case 'BUNCH': return 1;
     default: return 1;
   }
 }
@@ -48,6 +52,7 @@ function getStep(unit: UnitType): number {
     case 'PIECE': return 1;
     case 'PACKET': return 1;
     case 'BUNDLE': return 1;
+    case 'BUNCH': return 1;
     default: return 1;
   }
 }
