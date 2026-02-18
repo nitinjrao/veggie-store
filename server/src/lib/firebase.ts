@@ -9,7 +9,14 @@ if (!serviceAccountJson) {
   throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON environment variable is required');
 }
 
-const serviceAccount = JSON.parse(serviceAccountJson);
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(serviceAccountJson);
+} catch {
+  // Railway converts \n to actual newlines, breaking JSON.parse.
+  // Try base64 decoding as a fallback.
+  serviceAccount = JSON.parse(Buffer.from(serviceAccountJson, 'base64').toString());
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
