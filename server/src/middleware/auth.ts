@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/jwt';
+import { firebaseAuth } from '../lib/firebase';
+import { prisma } from '../lib/prisma';
 import { ApiError } from '../utils/ApiError';
 
 declare global {
@@ -8,24 +9,54 @@ declare global {
       user?: {
         id: string;
         role: 'customer' | 'admin';
+        firebaseUid: string;
       };
     }
   }
 }
 
-export const authenticate = (req: Request, _res: Response, next: NextFunction) => {
+// Simple in-memory cache: firebaseUid -> { id, role, expiresAt }
+const userCache = new Map<string, { id: string; role: 'customer' | 'admin'; expiresAt: number }>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+export const authenticate = async (req: Request, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    throw new ApiError(401, 'No token provided');
+    return next(new ApiError(401, 'No token provided'));
   }
 
+  const idToken = authHeader.split(' ')[1];
+
   try {
-    const token = authHeader.split(' ')[1];
-    const payload = verifyToken(token);
-    req.user = payload;
-    next();
-  } catch {
-    throw new ApiError(401, 'Invalid or expired token');
+    const decoded = await firebaseAuth.verifyIdToken(idToken);
+    const firebaseUid = decoded.uid;
+
+    // Check cache first
+    const cached = userCache.get(firebaseUid);
+    if (cached && cached.expiresAt > Date.now()) {
+      req.user = { id: cached.id, role: cached.role, firebaseUid };
+      return next();
+    }
+
+    // Look up in Customer first, then AdminUser
+    const customer = await prisma.customer.findUnique({ where: { firebaseUid } });
+    if (customer) {
+      userCache.set(firebaseUid, { id: customer.id, role: 'customer', expiresAt: Date.now() + CACHE_TTL_MS });
+      req.user = { id: customer.id, role: 'customer', firebaseUid };
+      return next();
+    }
+
+    const admin = await prisma.adminUser.findUnique({ where: { firebaseUid } });
+    if (admin) {
+      userCache.set(firebaseUid, { id: admin.id, role: 'admin', expiresAt: Date.now() + CACHE_TTL_MS });
+      req.user = { id: admin.id, role: 'admin', firebaseUid };
+      return next();
+    }
+
+    return next(new ApiError(401, 'User not found'));
+  } catch (err) {
+    if (err instanceof ApiError) return next(err);
+    return next(new ApiError(401, 'Invalid or expired token'));
   }
 };
 

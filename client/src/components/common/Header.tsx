@@ -21,8 +21,8 @@ export default function Header({ onSearch, searchQuery = '' }: HeaderProps) {
     onSearch?.(value);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -96,9 +96,16 @@ export default function Header({ onSearch, searchQuery = '' }: HeaderProps) {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-1 ml-1">
-              <span className="text-sm text-text-muted hidden md:block max-w-[120px] truncate">
-                {user?.name || user?.phone || user?.email}
-              </span>
+              <Link
+                to="/profile"
+                className="flex items-center gap-1.5 p-2 rounded-xl hover:bg-gray-100/80 text-text-muted hover:text-primary-green transition-colors"
+                title="My Profile"
+              >
+                <User className="w-5 h-5" />
+                <span className="text-sm hidden md:block max-w-[120px] truncate">
+                  {user?.name || user?.phone || user?.email}
+                </span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="p-2.5 rounded-xl hover:bg-gray-100/80 text-text-muted hover:text-red-500 transition-colors"

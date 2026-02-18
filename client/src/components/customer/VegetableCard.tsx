@@ -87,7 +87,7 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
       )}
 
       {/* Emoji with float animation on hover */}
-      <div className="text-4xl text-center mb-2 py-2 group-hover:animate-float transition-transform">
+      <div className={`text-4xl text-center mb-2 py-2 group-hover:animate-float transition-transform ${vegetable.name === 'Radish' ? 'grayscale brightness-150' : ''}`}>
         {vegetable.emoji || '🥬'}
       </div>
 

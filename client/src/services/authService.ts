@@ -1,26 +1,63 @@
+import {
+  signInWithPhoneNumber,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signOut,
+  RecaptchaVerifier,
+  type ConfirmationResult,
+} from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import api from './api';
 import type { User } from '../types';
 
-interface AuthResponse {
-  token: string;
+interface FirebaseLoginResponse {
   user: User;
 }
 
-interface OtpResponse {
-  message: string;
-  phone: string;
-}
+let confirmationResult: ConfirmationResult | null = null;
 
 export const authService = {
-  adminLogin: (email: string, password: string) =>
-    api.post<AuthResponse>('/auth/admin/login', { email, password }).then((r) => r.data),
+  sendOtp: async (phone: string, recaptchaVerifier: RecaptchaVerifier) => {
+    // Firebase requires E.164 format (e.g., +919876543210)
+    const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+    confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
+  },
 
-  customerRegister: (phone: string, name?: string) =>
-    api.post<OtpResponse>('/auth/customer/register', { phone, name }).then((r) => r.data),
+  verifyOtp: async (otp: string, name?: string): Promise<User> => {
+    if (!confirmationResult) {
+      throw new Error('No OTP request in progress');
+    }
+    await confirmationResult.confirm(otp);
+    const idToken = await auth.currentUser!.getIdToken();
+    const { data } = await api.post<FirebaseLoginResponse>('/auth/customer/firebase-login', {
+      idToken,
+      name,
+    });
+    confirmationResult = null;
+    return data.user;
+  },
 
-  customerLogin: (phone: string) =>
-    api.post<OtpResponse>('/auth/customer/login', { phone }).then((r) => r.data),
+  googleSignIn: async (): Promise<User> => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+    const idToken = await auth.currentUser!.getIdToken();
+    const { data } = await api.post<FirebaseLoginResponse>('/auth/customer/firebase-login', {
+      idToken,
+    });
+    return data.user;
+  },
 
-  verifyOtp: (phone: string, otp: string) =>
-    api.post<AuthResponse>('/auth/customer/verify-otp', { phone, otp }).then((r) => r.data),
+  adminLogin: async (email: string, password: string): Promise<User> => {
+    await signInWithEmailAndPassword(auth, email, password);
+    const idToken = await auth.currentUser!.getIdToken();
+    const { data } = await api.post<FirebaseLoginResponse>('/auth/admin/firebase-login', {
+      idToken,
+    });
+    return data.user;
+  },
+
+  logout: async () => {
+    await signOut(auth);
+  },
 };

@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
 import { orderService } from '../../services/orderService';
-import type { UnitType } from '../../types';
+import { addressService } from '../../services/addressService';
+import type { UnitType, Address } from '../../types';
 import Header from '../../components/common/Header';
 import { getAvailableUnits, UNIT_LABELS } from '../../utils/pricing';
 
@@ -13,11 +14,28 @@ export default function CartPage() {
   const { items, removeItem, incrementItem, decrementItem, updateUnit, clearCart } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
-  const [address, setAddress] = useState('');
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [newAddress, setNewAddress] = useState('');
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+  const [newAddressLabel, setNewAddressLabel] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stockError, setStockError] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      addressService.getAll().then((addrs) => {
+        setSavedAddresses(addrs);
+        const def = addrs.find((a) => a.isDefault);
+        if (def) setSelectedAddressId(def.id);
+        else if (addrs.length > 0) setSelectedAddressId(addrs[0].id);
+      }).catch(() => {});
+    }
+  }, [isAuthenticated]);
+
+  const isNewAddress = selectedAddressId === '__new__' || savedAddresses.length === 0;
 
   const total = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
@@ -31,13 +49,27 @@ export default function CartPage() {
     setError('');
 
     try {
+      // Resolve effective address
+      let effectiveAddress = '';
+      if (isNewAddress) {
+        effectiveAddress = newAddress.trim();
+        if (saveNewAddress && effectiveAddress && newAddressLabel.trim()) {
+          try {
+            await addressService.create({ label: newAddressLabel.trim(), text: effectiveAddress });
+          } catch { /* address save is best-effort */ }
+        }
+      } else {
+        const selected = savedAddresses.find((a) => a.id === selectedAddressId);
+        effectiveAddress = selected?.text || '';
+      }
+
       const order = await orderService.placeOrder({
         items: items.map((item) => ({
           vegetableId: item.vegetableId,
           quantity: item.quantity,
           unit: item.unit,
         })),
-        address: address || undefined,
+        address: effectiveAddress || undefined,
         notes: notes || undefined,
       });
 
@@ -165,13 +197,62 @@ export default function CartPage() {
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1.5">Delivery Address</label>
-            <textarea
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Enter your delivery address..."
-              rows={2}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all resize-none"
-            />
+            {savedAddresses.length > 0 && (
+              <select
+                value={selectedAddressId}
+                onChange={(e) => setSelectedAddressId(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all mb-2 bg-white"
+              >
+                {savedAddresses.map((addr) => (
+                  <option key={addr.id} value={addr.id}>
+                    {addr.label}{addr.isDefault ? ' (Default)' : ''} — {addr.text.slice(0, 60)}{addr.text.length > 60 ? '...' : ''}
+                  </option>
+                ))}
+                <option value="__new__">Enter a new address...</option>
+              </select>
+            )}
+            {isNewAddress && (
+              <>
+                <textarea
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                  placeholder="Enter your delivery address..."
+                  rows={2}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all resize-none"
+                />
+                {isAuthenticated && (
+                  <div className="mt-2 space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={saveNewAddress}
+                        onChange={(e) => setSaveNewAddress(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-primary-green focus:ring-primary-green/40"
+                      />
+                      <span className="text-sm text-text-muted">Save this address</span>
+                    </label>
+                    {saveNewAddress && (
+                      <input
+                        type="text"
+                        value={newAddressLabel}
+                        onChange={(e) => setNewAddressLabel(e.target.value)}
+                        placeholder="Label (e.g. Home, Work)"
+                        className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
+                      />
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+            {isAuthenticated && (
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-1 mt-2 text-xs text-primary-green hover:underline"
+              >
+                <MapPin className="w-3 h-3" />
+                Manage saved addresses
+              </Link>
+            )}
           </div>
 
           <div>

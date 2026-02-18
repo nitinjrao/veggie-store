@@ -11,6 +11,7 @@ const FavoritesPage = lazy(() => import('./pages/customer/FavoritesPage'));
 const OrderConfirmationPage = lazy(() => import('./pages/customer/OrderConfirmationPage'));
 const OrderHistoryPage = lazy(() => import('./pages/customer/OrderHistoryPage'));
 const OrderDetailsPage = lazy(() => import('./pages/customer/OrderDetailsPage'));
+const ProfilePage = lazy(() => import('./pages/customer/ProfilePage'));
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminVegetablesPage = lazy(() => import('./pages/admin/AdminVegetablesPage'));
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/orders" element={<OrderHistoryPage />} />
           <Route path="/orders/:id" element={<OrderDetailsPage />} />
           <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         {/* Admin routes */}

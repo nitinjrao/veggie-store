@@ -16,16 +16,24 @@ const navItems = [
 
 export default function AdminLayout() {
   useInitialize();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, isLoading } = useAuthStore();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-3 border-gray-200 border-t-green-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return <Navigate to="/admin/login" replace />;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/admin/login');
   };
 

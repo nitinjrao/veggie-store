@@ -10,18 +10,27 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const login = useAuthStore((s) => s.login);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const result = await authService.adminLogin(email, password);
-      login(result.token, result.user);
+      const user = await authService.adminLogin(email, password);
+      setUser(user);
       navigate('/admin');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      const code = err.code;
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        setError('Invalid email or password');
+      } else if (code === 'auth/user-not-found') {
+        setError('No account found with this email');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please try again later.');
+      } else {
+        setError(err.response?.data?.error || err.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }

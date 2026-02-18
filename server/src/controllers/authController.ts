@@ -1,125 +1,114 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
-import { signToken } from '../utils/jwt';
+import { firebaseAuth } from '../lib/firebase';
 import { ApiError } from '../utils/ApiError';
 
-// In-memory OTP store: phone -> { otp, expiresAt }
-const otpStore = new Map<string, { otp: string; expiresAt: Date }>();
-
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// Admin login
-const adminLoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
-
-export const adminLogin = async (req: Request, res: Response) => {
-  const { email, password } = adminLoginSchema.parse(req.body);
-
-  const admin = await prisma.adminUser.findUnique({ where: { email } });
-  if (!admin) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  const valid = await bcrypt.compare(password, admin.password);
-  if (!valid) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  const token = signToken({ id: admin.id, role: 'admin' });
-  res.json({
-    token,
-    user: { id: admin.id, name: admin.name, email: admin.email, role: 'admin' as const },
-  });
-};
-
-// Customer register
-const customerRegisterSchema = z.object({
-  phone: z.string().min(10).max(15),
+const customerFirebaseLoginSchema = z.object({
+  idToken: z.string().min(1),
   name: z.string().min(1).optional(),
 });
 
-export const customerRegister = async (req: Request, res: Response) => {
-  const { phone, name } = customerRegisterSchema.parse(req.body);
+export const customerFirebaseLogin = async (req: Request, res: Response) => {
+  const { idToken, name } = customerFirebaseLoginSchema.parse(req.body);
 
-  let customer = await prisma.customer.findUnique({ where: { phone } });
-  if (customer) {
-    throw new ApiError(409, 'Phone number already registered. Please login instead.');
+  const decoded = await firebaseAuth.verifyIdToken(idToken);
+  const firebaseUid = decoded.uid;
+  const phone = decoded.phone_number || null;
+
+  // Try to find by firebaseUid first
+  let customer = await prisma.customer.findUnique({ where: { firebaseUid } });
+
+  if (!customer && phone) {
+    // Migration: link existing customer by phone number
+    customer = await prisma.customer.findUnique({ where: { phone } });
+    if (customer) {
+      customer = await prisma.customer.update({
+        where: { id: customer.id },
+        data: { firebaseUid, name: name || customer.name },
+      });
+    }
   }
 
-  customer = await prisma.customer.create({
-    data: { phone, name },
-  });
-
-  const otp = generateOtp();
-  otpStore.set(phone, { otp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[OTP] ${phone}: ${otp}`);
-  }
-
-  res.status(201).json({ message: 'OTP sent to your phone', phone });
-};
-
-// Customer login (request OTP)
-const customerLoginSchema = z.object({
-  phone: z.string().min(10).max(15),
-});
-
-export const customerLogin = async (req: Request, res: Response) => {
-  const { phone } = customerLoginSchema.parse(req.body);
-
-  const customer = await prisma.customer.findUnique({ where: { phone } });
   if (!customer) {
-    throw new ApiError(404, 'Phone number not registered. Please register first.');
+    // Create new customer
+    customer = await prisma.customer.create({
+      data: {
+        phone: phone || `firebase_${firebaseUid}`,
+        name: name || decoded.name || null,
+        firebaseUid,
+      },
+    });
   }
 
-  const otp = generateOtp();
-  otpStore.set(phone, { otp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[OTP] ${phone}: ${otp}`);
-  }
-
-  res.json({ message: 'OTP sent to your phone', phone });
-};
-
-// Verify OTP
-const verifyOtpSchema = z.object({
-  phone: z.string().min(10).max(15),
-  otp: z.string().length(6),
-});
-
-export const verifyOtp = async (req: Request, res: Response) => {
-  const { phone, otp } = verifyOtpSchema.parse(req.body);
-
-  const stored = otpStore.get(phone);
-  if (!stored) {
-    throw new ApiError(400, 'No OTP requested for this phone number');
-  }
-
-  if (new Date() > stored.expiresAt) {
-    otpStore.delete(phone);
-    throw new ApiError(400, 'OTP has expired. Please request a new one.');
-  }
-
-  if (stored.otp !== otp) {
-    throw new ApiError(400, 'Invalid OTP');
-  }
-
-  otpStore.delete(phone);
-
-  const customer = await prisma.customer.findUnique({ where: { phone } });
-  if (!customer) {
-    throw new ApiError(404, 'Customer not found');
-  }
-
-  const token = signToken({ id: customer.id, role: 'customer' });
   res.json({
-    token,
-    user: { id: customer.id, phone: customer.phone, name: customer.name, role: 'customer' as const },
+    user: {
+      id: customer.id,
+      phone: customer.phone,
+      name: customer.name,
+      role: 'customer' as const,
+    },
+  });
+};
+
+const updateProfileSchema = z.object({
+  whatsapp: z.string().max(20).optional(),
+});
+
+export const getProfile = async (req: Request, res: Response) => {
+  const customer = await prisma.customer.findUnique({ where: { id: req.user!.id } });
+  if (!customer) throw new ApiError(404, 'Customer not found');
+  res.json({ id: customer.id, name: customer.name, phone: customer.phone, whatsapp: customer.whatsapp });
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+  const data = updateProfileSchema.parse(req.body);
+  const customer = await prisma.customer.update({
+    where: { id: req.user!.id },
+    data,
+  });
+  res.json({ id: customer.id, name: customer.name, phone: customer.phone, whatsapp: customer.whatsapp });
+};
+
+const adminFirebaseLoginSchema = z.object({
+  idToken: z.string().min(1),
+});
+
+export const adminFirebaseLogin = async (req: Request, res: Response) => {
+  const { idToken } = adminFirebaseLoginSchema.parse(req.body);
+
+  const decoded = await firebaseAuth.verifyIdToken(idToken);
+  const firebaseUid = decoded.uid;
+  const email = decoded.email;
+
+  if (!email) {
+    throw new ApiError(400, 'Firebase account has no email');
+  }
+
+  // Try to find by firebaseUid first
+  let admin = await prisma.adminUser.findUnique({ where: { firebaseUid } });
+
+  if (!admin) {
+    // Migration: link existing admin by email
+    admin = await prisma.adminUser.findUnique({ where: { email } });
+    if (admin) {
+      admin = await prisma.adminUser.update({
+        where: { id: admin.id },
+        data: { firebaseUid },
+      });
+    }
+  }
+
+  if (!admin) {
+    throw new ApiError(403, 'Not authorized as admin');
+  }
+
+  res.json({
+    user: {
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: 'admin' as const,
+    },
   });
 };

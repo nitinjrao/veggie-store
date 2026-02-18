@@ -91,6 +91,14 @@ export interface OrdersResponse {
   totalPages: number;
 }
 
+export interface Address {
+  id: string;
+  label: string;
+  text: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
 export interface PlaceOrderPayload {
   items: {
     vegetableId: string;

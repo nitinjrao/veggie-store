@@ -68,8 +68,9 @@ export default function AdminAnalyticsPage() {
       .finally(() => setLoading(false));
   }, [days]);
 
-  const handleExport = () => {
-    const token = localStorage.getItem('token');
+  const handleExport = async () => {
+    const { auth } = await import('../../lib/firebase');
+    const token = await auth.currentUser?.getIdToken();
     window.open(`/api/admin/analytics/export?days=${days}&token=${token}`, '_blank');
   };
 

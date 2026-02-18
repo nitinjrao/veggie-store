@@ -32,26 +32,30 @@ enum ChangeType {
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  name      String?
-  address   String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  phone       String   @unique
+  name        String?
+  whatsapp    String?
+  address     String?
+  firebaseUid String?  @unique @map("firebase_uid")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   orders    Order[]
   favorites Favorite[]
+  addresses Address[]
 
   @@map("customers")
 }
 
 model AdminUser {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String?
+  name        String
+  firebaseUid String?  @unique @map("firebase_uid")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("admin_users")
 }
@@ -168,6 +172,20 @@ model PriceHistory {
   vegetable Vegetable @relation(fields: [vegetableId], references: [id])
 
   @@map("price_history")
+}
+
+model Address {
+  id         String   @id @default(uuid())
+  customerId String   @map("customer_id")
+  label      String
+  text       String
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
 }
 
 model InventoryLog {

@@ -1,21 +1,26 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Seed admin user
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  // Seed admin users (passwords managed by Firebase Auth)
   await prisma.adminUser.upsert({
     where: { email: 'admin@sampadagreen.com' },
     update: {},
     create: {
       email: 'admin@sampadagreen.com',
-      password: hashedPassword,
       name: 'Admin',
     },
   });
-  console.log('Admin user seeded');
+  await prisma.adminUser.upsert({
+    where: { email: 'nitinjrao@gmail.com' },
+    update: {},
+    create: {
+      email: 'nitinjrao@gmail.com',
+      name: 'Nitin',
+    },
+  });
+  console.log('Admin users seeded');
 
   // Seed categories
   const categories = [

@@ -1,17 +1,19 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
+import { authenticate, requireCustomer } from '../middleware/auth';
 import {
-  adminLogin,
-  customerRegister,
-  customerLogin,
-  verifyOtp,
+  customerFirebaseLogin,
+  adminFirebaseLogin,
+  getProfile,
+  updateProfile,
 } from '../controllers/authController';
 
 const router = Router();
 
-router.post('/admin/login', asyncHandler(adminLogin));
-router.post('/customer/register', asyncHandler(customerRegister));
-router.post('/customer/login', asyncHandler(customerLogin));
-router.post('/customer/verify-otp', asyncHandler(verifyOtp));
+router.post('/customer/firebase-login', asyncHandler(customerFirebaseLogin));
+router.post('/admin/firebase-login', asyncHandler(adminFirebaseLogin));
+
+router.get('/profile', authenticate, requireCustomer, asyncHandler(getProfile));
+router.patch('/profile', authenticate, requireCustomer, asyncHandler(updateProfile));
 
 export default router;

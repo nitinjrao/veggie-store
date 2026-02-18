@@ -17,6 +17,7 @@ import adminCustomerRoutes from './routes/adminCustomerRoutes';
 import adminAnalyticsRoutes from './routes/adminAnalyticsRoutes';
 import adminCategoryRoutes from './routes/adminCategoryRoutes';
 import favoriteRoutes from './routes/favoriteRoutes';
+import addressRoutes from './routes/addressRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -83,6 +84,7 @@ app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/addresses', addressRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
