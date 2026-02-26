@@ -9,15 +9,21 @@ import path from 'path';
 import authRoutes from './routes/authRoutes';
 import vegetableRoutes from './routes/vegetableRoutes';
 import categoryRoutes from './routes/categoryRoutes';
-import orderRoutes from './routes/orderRoutes';
 import adminVegetableRoutes from './routes/adminVegetableRoutes';
 import adminDashboardRoutes from './routes/adminDashboardRoutes';
-import adminOrderRoutes from './routes/adminOrderRoutes';
 import adminCustomerRoutes from './routes/adminCustomerRoutes';
 import adminAnalyticsRoutes from './routes/adminAnalyticsRoutes';
 import adminCategoryRoutes from './routes/adminCategoryRoutes';
+import adminPaymentRoutes from './routes/adminPaymentRoutes';
 import favoriteRoutes from './routes/favoriteRoutes';
 import addressRoutes from './routes/addressRoutes';
+import staffRoutes from './routes/staffRoutes';
+import adminStaffRoutes from './routes/adminStaffRoutes';
+import adminLocationRoutes from './routes/adminLocationRoutes';
+import adminFridgeRoutes from './routes/adminFridgeRoutes';
+import adminFridgeOrderRoutes from './routes/adminFridgeOrderRoutes';
+import producerFridgeRoutes from './routes/producerFridgeRoutes';
+import customerFridgeRoutes from './routes/customerFridgeRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -25,23 +31,28 @@ const PORT = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  'http://localhost:5173',
-].filter(Boolean) as string[];
+const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173'].filter(
+  Boolean
+) as string[];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc)
-    if (!origin) return callback(null, true);
-    // Allow exact match or any Vercel preview URL
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
-      return callback(null, true);
-    }
-    callback(null, false);
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc)
+      if (!origin) return callback(null, true);
+      // Allow exact match or any Vercel preview URL
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.up.railway.app')
+      ) {
+        return callback(null, true);
+      }
+      callback(null, false);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -62,6 +73,7 @@ const authLimiter = rateLimit({
   message: { message: 'Too many auth attempts, please try again later.' },
 });
 
+app.use('/api', apiLimiter);
 app.use('/api/auth', authLimiter);
 
 // Serve uploaded images
@@ -76,15 +88,21 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/vegetables', vegetableRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderRoutes);
 app.use('/api/admin/vegetables', adminVegetableRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
-app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin', adminPaymentRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/admin/staff', adminStaffRoutes);
+app.use('/api/admin/locations', adminLocationRoutes);
+app.use('/api/admin/fridges', adminFridgeRoutes);
+app.use('/api/admin/fridge-orders', adminFridgeOrderRoutes);
+app.use('/api/producer/fridges', producerFridgeRoutes);
+app.use('/api/fridge', customerFridgeRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

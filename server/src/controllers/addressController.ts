@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { ApiError } from '../utils/ApiError';
+import { getAuthUser } from '../utils/getUser';
 
 const MAX_ADDRESSES = 10;
 
@@ -18,7 +19,8 @@ const updateSchema = z.object({
 });
 
 export const listAddresses = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
 
   const addresses = await prisma.address.findMany({
     where: { customerId },
@@ -29,7 +31,8 @@ export const listAddresses = async (req: Request, res: Response) => {
 };
 
 export const createAddress = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
   const data = createSchema.parse(req.body);
 
   const count = await prisma.address.count({ where: { customerId } });
@@ -38,7 +41,7 @@ export const createAddress = async (req: Request, res: Response) => {
   }
 
   // First address is automatically default
-  const isDefault = count === 0 ? true : data.isDefault ?? false;
+  const isDefault = count === 0 ? true : (data.isDefault ?? false);
 
   let address;
   if (isDefault && count > 0) {
@@ -61,7 +64,8 @@ export const createAddress = async (req: Request, res: Response) => {
 };
 
 export const updateAddress = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
   const id = req.params.id as string;
   const data = updateSchema.parse(req.body);
 
@@ -87,7 +91,8 @@ export const updateAddress = async (req: Request, res: Response) => {
 };
 
 export const deleteAddress = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
   const id = req.params.id as string;
 
   const existing = await prisma.address.findUnique({ where: { id } });

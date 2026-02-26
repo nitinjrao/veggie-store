@@ -1,0 +1,189 @@
+========================================
+  VEGGIE STORE — ADMIN TESTING CHECKLIST
+========================================
+
+Admin Login: http://localhost:5174/admin/login
+Email: admin@sampadagreen.com
+
+========================================
+  1. LOGIN & DASHBOARD
+========================================
+[ ] Login with admin credentials
+[ ] Dashboard loads without errors
+[ ] Summary stats cards show correct numbers (vegetables, categories, orders, low stock)
+[ ] Recent orders panel displays data
+[ ] Low stock alerts panel displays data
+[ ] Quick links navigate to correct pages
+
+========================================
+  2. CATEGORIES (/admin/categories)
+========================================
+[ ] Page loads, existing categories listed
+[ ] Create: Click "Add Category" -> fill name (English/Hindi/Kannada) -> set sort order -> Save
+[ ] Edit: Click pencil icon -> modify name -> Save
+[ ] Delete: Click trash icon -> confirm -> category removed
+[ ] Delete disabled if category has vegetables
+
+========================================
+  3. VEGETABLES (/admin/vegetables)
+========================================
+[ ] Page loads, existing vegetables listed
+[ ] Search: Type a name -> results filter correctly
+[ ] Create: Click "Add Vegetable" ->
+    [ ] Fill English, Hindi, Kannada names
+    [ ] Select category
+    [ ] Set emoji
+    [ ] Add description
+    [ ] Set prices (per kg, piece, packet, bundle, bunch)
+    [ ] Set stock (current kg, minimum alert threshold)
+    [ ] Upload image
+    [ ] Toggle availability
+    [ ] Save
+[ ] Edit: Click a vegetable -> modify fields -> Save
+[ ] Delete: Click trash icon -> confirm -> vegetable removed
+[ ] Price history: Visible on edit page after price changes
+
+========================================
+  4. STAFF (/admin/staff)
+========================================
+[ ] Page loads, existing staff listed
+[ ] Filter by role tabs (Producer / Supplier / Transporter)
+[ ] Search by name or email
+[ ] Create: Click "Add Staff" ->
+    [ ] Fill name, email, phone
+    [ ] Select role
+    [ ] Save
+[ ] Edit: Click pencil -> modify -> Save
+[ ] Deactivate: Soft-delete a staff member
+
+========================================
+  5. ZONES (/admin/zones)
+========================================
+[ ] Page loads, existing zones listed
+[ ] Create: Click "Add Zone" -> fill name, description, sort order -> Save
+[ ] Edit: Click pencil -> modify -> Save
+[ ] Toggle Active/Inactive status
+[ ] Delete: Click trash -> confirm (only works if zone has no orders)
+
+========================================
+  6. LOCATIONS (/admin/locations)
+========================================
+[ ] Page loads, existing locations listed
+[ ] Create: Click "Add Location" -> fill name, address, lat/lng -> Save
+[ ] Edit: Click pencil -> modify -> Save
+[ ] Toggle Active/Inactive status
+[ ] Fridge count displays correctly
+[ ] Delete: Click trash -> confirm (only works if location has no fridges)
+
+========================================
+  7. SMART FRIDGES (/admin/fridges)
+========================================
+[ ] Page loads, existing fridges listed
+[ ] Filter by location dropdown
+[ ] Filter by status (Active / Inactive / Maintenance)
+[ ] Low stock alerts banner shows at top
+[ ] Create: Add new fridge -> assign location -> set status -> Save
+[ ] Edit: Modify fridge details -> Save
+[ ] Delete: Remove a fridge
+[ ] Manage Inventory (/admin/fridges/:id/inventory):
+    [ ] Add a vegetable to fridge inventory
+    [ ] Set quantity and minimum threshold
+    [ ] Update existing item quantity
+    [ ] Remove item from inventory
+    [ ] Low stock alert shows for items below threshold
+
+========================================
+  8. ORDERS (/admin/orders)
+========================================
+[ ] Page loads, orders listed
+[ ] Filter by status tabs (All / Pending / Confirmed / Out for Delivery / Delivered / Cancelled)
+[ ] Search by order number
+[ ] Search by customer name
+[ ] Search by phone number
+[ ] Pagination works (Previous / Next)
+[ ] Order Detail (/admin/orders/:id):
+    [ ] Order info displays correctly (number, date, customer, items, total)
+    [ ] Update status: PENDING -> CONFIRMED
+    [ ] Update status: CONFIRMED -> OUT_FOR_DELIVERY
+    [ ] Update status: OUT_FOR_DELIVERY -> DELIVERED
+    [ ] Update status: any -> CANCELLED
+    [ ] Log payment: Select method (Cash/Card/UPI) -> enter amount -> Save
+    [ ] Payment status updates (Unpaid -> Partial -> Paid)
+    [ ] Delete a payment -> balance recalculates
+    [ ] WhatsApp contact link works
+
+========================================
+  9. CUSTOMERS (/admin/customers)
+========================================
+[ ] Page loads, customers listed
+[ ] Search by name
+[ ] Search by phone
+[ ] Pagination works
+[ ] Customer Detail (/admin/customers/:id):
+    [ ] Profile info displays (name, phone)
+    [ ] Stats: total orders, total spend, favorites count
+    [ ] Order history listed with correct statuses
+
+========================================
+  10. FRIDGE ORDERS (/admin/fridge-orders)
+========================================
+[ ] Page loads, fridge orders listed
+[ ] Filter by order status (Pending / Picked Up / Cancelled)
+[ ] Filter by payment status (Unpaid / Partial / Paid)
+[ ] Filter by fridge/location
+[ ] Search by order number, customer name, phone
+[ ] Pagination works
+[ ] Fridge Order Detail (/admin/fridge-orders/:id):
+    [ ] Order info displays (number, date, customer, fridge, location, items, total)
+    [ ] Update status: PENDING -> PICKED_UP
+    [ ] Update status: PENDING -> CANCELLED
+    [ ] Log payment -> Save
+    [ ] Payment status updates correctly
+    [ ] Delete a payment
+
+========================================
+  11. ANALYTICS (/admin/analytics)
+========================================
+[ ] Page loads without errors
+[ ] Switch period: 7 / 14 / 30 / 60 / 90 days
+[ ] Revenue metric displays with trend arrow
+[ ] Order count metric displays with trend arrow
+[ ] Average order value displays
+[ ] Revenue trend line chart renders
+[ ] Top selling products bar chart renders
+[ ] Order status breakdown bars render
+[ ] Export CSV: Click download -> CSV file downloads
+
+========================================
+  12. SHARE (/admin/share)
+========================================
+[ ] Page loads
+[ ] Copy store link -> pastes correctly
+[ ] WhatsApp share opens WhatsApp with pre-filled message
+[ ] QR code generates and displays
+
+========================================
+  SUGGESTED TESTING ORDER
+========================================
+ 1. Login & Dashboard
+ 2. Categories (create one)
+ 3. Vegetables (create one in that category)
+ 4. Locations (create one)
+ 5. Fridges (create one at that location, add inventory)
+ 6. Zones (create one)
+ 7. Staff (create producer, supplier, transporter)
+ 8. [Switch to customer view at /] Place a regular order
+ 9. [Switch to customer view at /fridge] Place a fridge pickup order
+10. Orders (find order, update status, log payment)
+11. Fridge Orders (find order, update status, log payment)
+12. Customers (verify customer appears with orders)
+13. Analytics (verify charts reflect new data)
+14. Share (test links and QR)
+
+========================================
+  NOTES
+========================================
+- Server: http://localhost:3000
+- Client: http://localhost:5174
+- Admin Login: admin@sampadagreen.com
+- Customer Login: http://localhost:5174/login

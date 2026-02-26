@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, TrendingUp, TrendingDown, Minus, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../../utils/error';
 import { adminService } from '../../services/adminService';
 import type { Category } from '../../types';
 import type { VegetableFormData, PriceHistoryItem } from '../../services/adminService';
@@ -100,8 +101,8 @@ export default function AdminVegetableFormPage() {
         toast.success('Vegetable added');
       }
       navigate('/admin/vegetables');
-    } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -158,9 +159,7 @@ export default function AdminVegetableFormPage() {
         {isEdit ? 'Edit Vegetable' : 'Add Vegetable'}
       </h1>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>
-      )}
+      {error && <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
@@ -251,7 +250,10 @@ export default function AdminVegetableFormPage() {
                   <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
-                    onClick={() => { setImagePreview(null); updateField('image', undefined); }}
+                    onClick={() => {
+                      setImagePreview(null);
+                      updateField('image', undefined);
+                    }}
                     className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
                   >
                     <X className="w-3 h-3" />
@@ -430,7 +432,10 @@ export default function AdminVegetableFormPage() {
                 const isUp = oldP !== null && newP > oldP;
                 const isDown = oldP !== null && newP < oldP;
                 return (
-                  <div key={entry.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                  <div
+                    key={entry.id}
+                    className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0"
+                  >
                     <div className="flex items-center gap-2">
                       {isUp ? (
                         <TrendingUp className="w-3.5 h-3.5 text-red-500" />

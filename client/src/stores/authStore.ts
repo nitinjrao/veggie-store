@@ -41,8 +41,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     // Listen for Firebase auth state changes
+    const isDevBypass = import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_API_KEY;
     onAuthStateChanged(auth, (firebaseUser) => {
       if (!firebaseUser) {
+        if (isDevBypass) {
+          // Dev mode without Firebase — keep localStorage user for UI preview
+          set({ isLoading: false });
+          return;
+        }
         // Firebase user signed out
         localStorage.removeItem('user');
         set({ user: null, isAuthenticated: false, isLoading: false });

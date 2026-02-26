@@ -31,6 +31,51 @@ enum ChangeType {
   WASTAGE
 }
 
+enum StaffRole {
+  PRODUCER
+  SUPPLIER
+  TRANSPORTER
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  OVERPAID
+}
+
+enum WeightClass {
+  HEAVY
+  MEDIUM
+  LIGHT
+  DELICATE
+}
+
+enum RefrigeratorStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum TransactionType {
+  LOAD
+  PICKUP
+  ADJUSTMENT
+}
+
+enum FridgeOrderStatus {
+  PENDING
+  CONFIRMED
+  READY
+  PICKED_UP
+  CANCELLED
+}
+
 model Customer {
   id          String   @id @default(uuid())
   phone       String   @unique
@@ -41,9 +86,10 @@ model Customer {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  orders    Order[]
-  favorites Favorite[]
-  addresses Address[]
+  orders           Order[]
+  favorites        Favorite[]
+  addresses        Address[]
+  fridgePickupOrders FridgePickupOrder[]
 
   @@map("customers")
 }
@@ -57,21 +103,55 @@ model AdminUser {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  payments Payment[]
+
   @@map("admin_users")
 }
 
+model StaffUser {
+  id          String    @id @default(uuid())
+  name        String
+  phone       String?
+  email       String    @unique
+  role        StaffRole
+  firebaseUid String?   @unique @map("firebase_uid")
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  assignedFridges      ProducerFridgeAssignment[]
+  assignedFridgeOrders FridgePickupOrder[]        @relation("AssignedToStaff")
+
+  @@map("staff_users")
+}
+
 model Category {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  nameHindi String?  @map("name_hindi")
-  nameKannada String? @map("name_kannada")
-  image     String?
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String       @id @default(uuid())
+  name        String       @unique
+  nameHindi   String?      @map("name_hindi")
+  nameKannada String?      @map("name_kannada")
+  image       String?
+  sortOrder   Int          @default(0) @map("sort_order")
+  weightClass WeightClass  @default(MEDIUM) @map("weight_class")
+  createdAt   DateTime     @default(now()) @map("created_at")
 
   vegetables Vegetable[]
 
   @@map("categories")
+}
+
+model DeliveryZone {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@map("delivery_zones")
 }
 
 model Vegetable {
@@ -89,12 +169,15 @@ model Vegetable {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  category      Category       @relation(fields: [categoryId], references: [id])
-  prices        Price[]
-  orderItems    OrderItem[]
-  favorites     Favorite[]
-  priceHistory  PriceHistory[]
-  inventoryLogs InventoryLog[]
+  category              Category                @relation(fields: [categoryId], references: [id])
+  prices                Price[]
+  orderItems            OrderItem[]
+  favorites             Favorite[]
+  priceHistory          PriceHistory[]
+  inventoryLogs         InventoryLog[]
+  fridgeInventory       RefrigeratorInventory[]
+  fridgeTransactions    RefrigeratorTransaction[]
+  fridgePickupItems     FridgePickupItem[]
 
   @@map("vegetables")
 }
@@ -117,21 +200,45 @@ model Price {
 }
 
 model Order {
-  id          String      @id @default(uuid())
-  orderNumber String      @unique @map("order_number")
-  customerId  String      @map("customer_id")
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @map("total_amount") @db.Decimal(10, 2)
-  address     String?
-  notes       String?
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  id             String        @id @default(uuid())
+  orderNumber    String        @unique @map("order_number")
+  customerId     String        @map("customer_id")
+  status         OrderStatus   @default(PENDING)
+  totalAmount    Decimal       @map("total_amount") @db.Decimal(10, 2)
+  paidAmount     Decimal       @default(0) @map("paid_amount") @db.Decimal(10, 2)
+  paymentStatus  PaymentStatus @default(UNPAID) @map("payment_status")
+  address        String?
+  deliveryZoneId String?       @map("delivery_zone_id")
+  notes          String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 
   customer      Customer       @relation(fields: [customerId], references: [id])
+  deliveryZone  DeliveryZone?  @relation(fields: [deliveryZoneId], references: [id])
   items         OrderItem[]
+  payments      Payment[]
   inventoryLogs InventoryLog[]
 
   @@map("orders")
+}
+
+model Payment {
+  id                 String        @id @default(uuid())
+  orderId            String?       @map("order_id")
+  fridgePickupOrderId String?      @map("fridge_pickup_order_id")
+  amount             Decimal       @db.Decimal(10, 2)
+  method             PaymentMethod
+  reference          String?
+  notes              String?
+  loggedById         String        @map("logged_by_id")
+  receivedAt         DateTime      @default(now()) @map("received_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+
+  order            Order?            @relation(fields: [orderId], references: [id])
+  fridgePickupOrder FridgePickupOrder? @relation(fields: [fridgePickupOrderId], references: [id])
+  loggedBy         AdminUser          @relation(fields: [loggedById], references: [id])
+
+  @@map("payments")
 }
 
 model OrderItem {
@@ -201,4 +308,125 @@ model InventoryLog {
   order     Order?    @relation(fields: [orderId], references: [id])
 
   @@map("inventory_logs")
+}
+
+// ─── Refrigerator Module ────────────────────────────────────────────
+
+model Location {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  address   String
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  refrigerators Refrigerator[]
+
+  @@map("locations")
+}
+
+model Refrigerator {
+  id         String             @id @default(uuid())
+  locationId String             @map("location_id")
+  name       String
+  status     RefrigeratorStatus @default(ACTIVE)
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  location          Location                  @relation(fields: [locationId], references: [id])
+  inventory         RefrigeratorInventory[]
+  transactions      RefrigeratorTransaction[]
+  pickupOrders      FridgePickupOrder[]
+  assignedProducers ProducerFridgeAssignment[]
+
+  @@map("refrigerators")
+}
+
+model RefrigeratorInventory {
+  id                String   @id @default(uuid())
+  refrigeratorId    String   @map("refrigerator_id")
+  vegetableId       String   @map("vegetable_id")
+  quantityAvailable Decimal  @default(0) @map("quantity_available") @db.Decimal(10, 3)
+  minimumThreshold  Decimal  @default(2) @map("minimum_threshold") @db.Decimal(10, 3)
+  lastUpdatedAt     DateTime @default(now()) @map("last_updated_at")
+
+  refrigerator Refrigerator @relation(fields: [refrigeratorId], references: [id])
+  vegetable    Vegetable    @relation(fields: [vegetableId], references: [id])
+
+  @@unique([refrigeratorId, vegetableId])
+  @@map("refrigerator_inventory")
+}
+
+model RefrigeratorTransaction {
+  id             String          @id @default(uuid())
+  refrigeratorId String          @map("refrigerator_id")
+  vegetableId    String          @map("vegetable_id")
+  quantity       Decimal         @db.Decimal(10, 3)
+  type           TransactionType
+  userId         String          @map("user_id")
+  userRole       String          @map("user_role")
+  note           String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  refrigerator Refrigerator @relation(fields: [refrigeratorId], references: [id])
+  vegetable    Vegetable    @relation(fields: [vegetableId], references: [id])
+
+  @@map("refrigerator_transactions")
+}
+
+model FridgePickupOrder {
+  id              String            @id @default(uuid())
+  orderNumber     String            @unique @map("order_number")
+  customerId      String            @map("customer_id")
+  refrigeratorId  String            @map("refrigerator_id")
+  status          FridgeOrderStatus @default(PENDING)
+  totalAmount     Decimal           @map("total_amount") @db.Decimal(10, 2)
+  paidAmount      Decimal           @default(0) @map("paid_amount") @db.Decimal(10, 2)
+  paymentStatus   PaymentStatus     @default(UNPAID) @map("payment_status")
+  assignedToId    String?           @map("assigned_to_id")
+  notes           String?
+  confirmedAt     DateTime?         @map("confirmed_at")
+  readyAt         DateTime?         @map("ready_at")
+  pickedUpAt      DateTime?         @map("picked_up_at")
+  cancelledAt     DateTime?         @map("cancelled_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  customer     Customer         @relation(fields: [customerId], references: [id])
+  refrigerator Refrigerator     @relation(fields: [refrigeratorId], references: [id])
+  assignedTo   StaffUser?       @relation("AssignedToStaff", fields: [assignedToId], references: [id])
+  items        FridgePickupItem[]
+  payments     Payment[]
+
+  @@map("fridge_pickup_orders")
+}
+
+model FridgePickupItem {
+  id            String  @id @default(uuid())
+  pickupOrderId String  @map("pickup_order_id")
+  vegetableId   String  @map("vegetable_id")
+  quantity      Decimal @db.Decimal(10, 3)
+  unit          UnitType
+  unitPrice     Decimal @map("unit_price") @db.Decimal(10, 2)
+  totalPrice    Decimal @map("total_price") @db.Decimal(10, 2)
+
+  pickupOrder FridgePickupOrder @relation(fields: [pickupOrderId], references: [id])
+  vegetable   Vegetable         @relation(fields: [vegetableId], references: [id])
+
+  @@map("fridge_pickup_items")
+}
+
+model ProducerFridgeAssignment {
+  id             String   @id @default(uuid())
+  staffUserId    String   @map("staff_user_id")
+  refrigeratorId String   @map("refrigerator_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  staffUser    StaffUser    @relation(fields: [staffUserId], references: [id], onDelete: Cascade)
+  refrigerator Refrigerator @relation(fields: [refrigeratorId], references: [id], onDelete: Cascade)
+
+  @@unique([staffUserId, refrigeratorId])
+  @@map("producer_fridge_assignments")
 }

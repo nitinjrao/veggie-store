@@ -25,4 +25,3 @@ router.put('/:id', asyncHandler(adminUpdateVegetable));
 router.delete('/:id', asyncHandler(adminDeleteVegetable));
 
 export default router;
-

@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { adminService } from '../../services/adminService';
+import { formatDate } from '../../utils/formatting';
 
 interface CustomerListItem {
   id: string;
   name: string | null;
   phone: string;
   createdAt: string;
-  _count: { orders: number };
+  _count: { fridgePickupOrders: number };
 }
 
 export default function AdminCustomersPage() {
@@ -40,13 +41,6 @@ export default function AdminCustomersPage() {
     const timer = setTimeout(() => loadCustomers(), 300);
     return () => clearTimeout(timer);
   }, [loadCustomers]);
-
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
 
   return (
     <div>
@@ -94,7 +88,7 @@ export default function AdminCustomersPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-text-muted">{c.phone}</td>
-                    <td className="px-4 py-3">{c._count.orders}</td>
+                    <td className="px-4 py-3">{c._count.fridgePickupOrders}</td>
                     <td className="px-4 py-3 text-text-muted text-xs">{formatDate(c.createdAt)}</td>
                   </tr>
                 ))}
@@ -112,7 +106,9 @@ export default function AdminCustomersPage() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-            <p className="text-xs text-text-muted">{total} customer{total !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-text-muted">
+              {total} customer{total !== 1 ? 's' : ''}
+            </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -121,7 +117,9 @@ export default function AdminCustomersPage() {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm text-text-muted">{page} / {totalPages}</span>
+              <span className="text-sm text-text-muted">
+                {page} / {totalPages}
+              </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}

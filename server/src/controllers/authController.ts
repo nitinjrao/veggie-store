@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { firebaseAuth } from '../lib/firebase';
 import { ApiError } from '../utils/ApiError';
+import { getAuthUser } from '../utils/getUser';
 
 const customerFirebaseLoginSchema = z.object({
   idToken: z.string().min(1),
@@ -56,18 +57,30 @@ const updateProfileSchema = z.object({
 });
 
 export const getProfile = async (req: Request, res: Response) => {
-  const customer = await prisma.customer.findUnique({ where: { id: req.user!.id } });
+  const user = getAuthUser(req);
+  const customer = await prisma.customer.findUnique({ where: { id: user.id } });
   if (!customer) throw new ApiError(404, 'Customer not found');
-  res.json({ id: customer.id, name: customer.name, phone: customer.phone, whatsapp: customer.whatsapp });
+  res.json({
+    id: customer.id,
+    name: customer.name,
+    phone: customer.phone,
+    whatsapp: customer.whatsapp,
+  });
 };
 
 export const updateProfile = async (req: Request, res: Response) => {
+  const user = getAuthUser(req);
   const data = updateProfileSchema.parse(req.body);
   const customer = await prisma.customer.update({
-    where: { id: req.user!.id },
+    where: { id: user.id },
     data,
   });
-  res.json({ id: customer.id, name: customer.name, phone: customer.phone, whatsapp: customer.whatsapp });
+  res.json({
+    id: customer.id,
+    name: customer.name,
+    phone: customer.phone,
+    whatsapp: customer.whatsapp,
+  });
 };
 
 const adminFirebaseLoginSchema = z.object({

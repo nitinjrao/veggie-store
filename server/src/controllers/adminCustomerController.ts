@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { ApiError } from '../utils/ApiError';
+import { parsePagination } from '../utils/pagination';
 
 export const adminListCustomers = async (req: Request, res: Response) => {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
-  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
-  const skip = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query as { page?: string; limit?: string });
   const search = req.query.search as string | undefined;
 
-  const where: any = {};
+  const where: Prisma.CustomerWhereInput = {};
   if (search?.trim()) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -20,7 +20,7 @@ export const adminListCustomers = async (req: Request, res: Response) => {
     prisma.customer.findMany({
       where,
       include: {
-        _count: { select: { orders: true } },
+        _count: { select: { fridgePickupOrders: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -44,14 +44,15 @@ export const adminGetCustomer = async (req: Request, res: Response) => {
   const customer = await prisma.customer.findUnique({
     where: { id },
     include: {
-      orders: {
+      fridgePickupOrders: {
         orderBy: { createdAt: 'desc' },
         take: 20,
         include: {
+          refrigerator: { include: { location: true } },
           _count: { select: { items: true } },
         },
       },
-      _count: { select: { orders: true, favorites: true } },
+      _count: { select: { fridgePickupOrders: true, favorites: true } },
     },
   });
 
@@ -60,7 +61,7 @@ export const adminGetCustomer = async (req: Request, res: Response) => {
   }
 
   // Calculate total spend
-  const totalSpend = await prisma.order.aggregate({
+  const totalSpend = await prisma.fridgePickupOrder.aggregate({
     where: { customerId: id, status: { not: 'CANCELLED' } },
     _sum: { totalAmount: true },
   });

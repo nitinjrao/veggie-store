@@ -10,7 +10,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Download, IndianRupee, ShoppingCart, Receipt } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  Download,
+  IndianRupee,
+  ShoppingCart,
+  Receipt,
+} from 'lucide-react';
 import api from '../../services/api';
 
 interface SalesSummary {
@@ -75,7 +82,11 @@ export default function AdminAnalyticsPage() {
   };
 
   const formatCurrency = (n: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(n);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -133,8 +144,14 @@ export default function AdminAnalyticsPage() {
             </div>
           </div>
           {summary && summary.revenueChange !== 0 && (
-            <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${summary.revenueChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {summary.revenueChange > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+            <div
+              className={`flex items-center gap-1 mt-2 text-xs font-medium ${summary.revenueChange > 0 ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {summary.revenueChange > 0 ? (
+                <TrendingUp className="w-3.5 h-3.5" />
+              ) : (
+                <TrendingDown className="w-3.5 h-3.5" />
+              )}
               {Math.abs(summary.revenueChange)}% vs previous period
             </div>
           )}
@@ -151,8 +168,14 @@ export default function AdminAnalyticsPage() {
             </div>
           </div>
           {summary && summary.ordersChange !== 0 && (
-            <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${summary.ordersChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {summary.ordersChange > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+            <div
+              className={`flex items-center gap-1 mt-2 text-xs font-medium ${summary.ordersChange > 0 ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {summary.ordersChange > 0 ? (
+                <TrendingUp className="w-3.5 h-3.5" />
+              ) : (
+                <TrendingDown className="w-3.5 h-3.5" />
+              )}
               {Math.abs(summary.ordersChange)}% vs previous period
             </div>
           )}
@@ -162,7 +185,9 @@ export default function AdminAnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-muted">Avg Order Value</p>
-              <p className="text-2xl font-bold mt-1">{formatCurrency(summary?.avgOrderValue ?? 0)}</p>
+              <p className="text-2xl font-bold mt-1">
+                {formatCurrency(summary?.avgOrderValue ?? 0)}
+              </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
               <Receipt className="w-5 h-5 text-purple-600" />
@@ -183,8 +208,8 @@ export default function AdminAnalyticsPage() {
               <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
               <Tooltip
-                formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                labelFormatter={(label: any) => formatDate(String(label))}
+                formatter={(value) => [formatCurrency(Number(value)), 'Revenue']}
+                labelFormatter={(label) => formatDate(String(label))}
               />
               <Line
                 type="monotone"
@@ -211,13 +236,8 @@ export default function AdminAnalyticsPage() {
               <BarChart data={topProducts} layout="vertical" margin={{ left: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 11 }}
-                  width={80}
-                />
-                <Tooltip formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
+                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Revenue']} />
                 <Bar dataKey="totalRevenue" fill="#22c55e" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -236,9 +256,7 @@ export default function AdminAnalyticsPage() {
                 const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
                 const colors: Record<string, string> = {
                   PENDING: 'bg-yellow-400',
-                  CONFIRMED: 'bg-blue-400',
-                  OUT_FOR_DELIVERY: 'bg-purple-400',
-                  DELIVERED: 'bg-green-400',
+                  PICKED_UP: 'bg-green-400',
                   CANCELLED: 'bg-red-400',
                 };
                 return (

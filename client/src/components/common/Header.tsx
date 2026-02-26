@@ -31,10 +31,10 @@ export default function Header({ onSearch, searchQuery = '' }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-          <span className="text-2xl group-hover:animate-bounce-gentle transition-transform">🥬</span>
-          <span className="font-heading font-bold text-xl text-gradient-green">
-            Sampada Green
+          <span className="text-2xl group-hover:animate-bounce-gentle transition-transform">
+            🥬
           </span>
+          <span className="font-heading font-bold text-xl text-gradient-green">Sampada Green</span>
         </Link>
 
         {/* Desktop Search */}

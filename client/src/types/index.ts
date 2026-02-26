@@ -40,15 +40,30 @@ export interface Vegetable {
 
 export interface User {
   id: string;
-  role: 'customer' | 'admin';
+  role: 'customer' | 'admin' | 'producer' | 'supplier' | 'transporter';
+  staffRole?: string;
   name?: string | null;
   phone?: string;
   email?: string;
 }
 
-export type UnitType = 'KG' | 'GRAM' | 'PIECE' | 'BUNCH' | 'PACKET' | 'BUNDLE';
+export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'OVERPAID';
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+export type PaymentMethod = 'CASH' | 'UPI';
+
+export interface Payment {
+  id: string;
+  orderId: string;
+  amount: string;
+  method: PaymentMethod;
+  reference: string | null;
+  notes: string | null;
+  receivedAt: string;
+  createdAt: string;
+  loggedBy?: { name: string };
+}
+
+export type UnitType = 'KG' | 'GRAM' | 'PIECE' | 'BUNCH' | 'PACKET' | 'BUNDLE';
 
 export interface CartItem {
   vegetableId: string;
@@ -59,38 +74,6 @@ export interface CartItem {
   totalPrice: number;
 }
 
-export interface OrderItem {
-  id: string;
-  orderId: string;
-  vegetableId: string;
-  quantity: string;
-  unit: UnitType;
-  unitPrice: string;
-  totalPrice: string;
-  vegetable: Vegetable;
-}
-
-export interface Order {
-  id: string;
-  orderNumber: string;
-  customerId: string;
-  status: OrderStatus;
-  totalAmount: string;
-  address: string | null;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  items: OrderItem[];
-}
-
-export interface OrdersResponse {
-  orders: Order[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
 export interface Address {
   id: string;
   label: string;
@@ -99,12 +82,79 @@ export interface Address {
   createdAt: string;
 }
 
-export interface PlaceOrderPayload {
-  items: {
-    vegetableId: string;
-    quantity: number;
-    unit: UnitType;
-  }[];
-  address?: string;
-  notes?: string;
+// ---- Fridge / Refrigerator types ----
+
+export interface Location {
+  id: string;
+  name: string;
+  address: string;
+  latitude: string | null;
+  longitude: string | null;
+  active: boolean;
+  refrigerators?: Refrigerator[];
+}
+
+export type RefrigeratorStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+export type FridgeOrderStatus = 'PENDING' | 'CONFIRMED' | 'READY' | 'PICKED_UP' | 'CANCELLED';
+
+export interface Refrigerator {
+  id: string;
+  locationId: string;
+  name: string;
+  status: RefrigeratorStatus;
+  location?: Location;
+  _count?: { inventory: number };
+}
+
+export interface FridgeInventoryItem {
+  id: string;
+  refrigeratorId: string;
+  vegetableId: string;
+  quantityAvailable: string;
+  minimumThreshold: string;
+  vegetable: Vegetable;
+}
+
+export interface FridgePickupOrder {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  refrigeratorId: string;
+  status: FridgeOrderStatus;
+  totalAmount: string;
+  paidAmount: string;
+  paymentStatus: PaymentStatus;
+  assignedToId: string | null;
+  notes: string | null;
+  confirmedAt: string | null;
+  readyAt: string | null;
+  pickedUpAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: FridgePickupItem[];
+  refrigerator?: Refrigerator & { location?: Location };
+  payments?: Payment[];
+  assignedTo?: { id: string; name: string } | null;
+  customer?: { id: string; name: string | null; phone: string };
+}
+
+export interface FridgePickupItem {
+  id: string;
+  pickupOrderId: string;
+  vegetableId: string;
+  quantity: string;
+  unit: UnitType;
+  unitPrice: string;
+  totalPrice: string;
+  vegetable: Vegetable;
+}
+
+export interface FridgeCartItem {
+  vegetableId: string;
+  vegetable: Vegetable;
+  quantity: number;
+  unit: UnitType;
+  unitPrice: number;
+  totalPrice: number;
 }

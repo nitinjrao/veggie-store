@@ -1,59 +1,42 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Package, ChevronRight, RotateCcw } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { orderService } from '../../services/orderService';
-import { useCartStore } from '../../stores/cartStore';
-import type { Order, OrderStatus, UnitType } from '../../types';
+import { Link } from 'react-router-dom';
+import { Package, ChevronRight, Box, MapPin } from 'lucide-react';
 import Header from '../../components/common/Header';
+import { getErrorMessage } from '../../utils/error';
+import { fridgeService } from '../../services/fridgeService';
+import type { FridgePickupOrder } from '../../types';
+import {
+  FRIDGE_ORDER_STATUS_STYLES,
+  FRIDGE_ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_STYLES,
+} from '../../utils/statusStyles';
 
-const STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  CONFIRMED: 'bg-blue-100 text-blue-800 border-blue-200',
-  OUT_FOR_DELIVERY: 'bg-purple-100 text-purple-800 border-purple-200',
-  DELIVERED: 'bg-green-100 text-green-800 border-green-200',
-  CANCELLED: 'bg-red-100 text-red-800 border-red-200',
-};
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING: 'Pending',
-  CONFIRMED: 'Confirmed',
-  OUT_FOR_DELIVERY: 'Out for Delivery',
-  DELIVERED: 'Delivered',
-  CANCELLED: 'Cancelled',
-};
-
-export default function OrderHistoryPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+export default function FridgeOrdersPage() {
+  const [orders, setOrders] = useState<FridgePickupOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const navigate = useNavigate();
-  const addItemsFromOrder = useCartStore((s) => s.addItemsFromOrder);
-
-  const handleReorder = (e: React.MouseEvent, order: Order) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const items = order.items.map((item) => ({
-      vegetable: item.vegetable,
-      quantity: parseFloat(item.quantity),
-      unit: item.unit as UnitType,
-    }));
-    addItemsFromOrder(items);
-    toast.success('Items added to cart!');
-    navigate('/cart');
-  };
 
   useEffect(() => {
-    setLoading(true);
-    orderService
-      .getMyOrders(page)
-      .then((data) => {
-        setOrders(data.orders);
-        setTotalPages(data.totalPages);
+    let cancelled = false;
+    fridgeService
+      .getMyPickupOrders({ page, limit: 10 })
+      .then((data: { orders: FridgePickupOrder[]; totalPages: number }) => {
+        if (!cancelled) {
+          setOrders(data.orders);
+          setTotalPages(data.totalPages);
+        }
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch((err: unknown) => {
+        if (!cancelled) setError(getErrorMessage(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [page]);
 
   return (
@@ -75,18 +58,30 @@ export default function OrderHistoryPage() {
               </div>
             ))}
           </div>
+        ) : error ? (
+          <div className="text-center py-16 animate-fade-in">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-primary-green hover:underline font-medium"
+            >
+              Try Again
+            </button>
+          </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-16 animate-fade-in">
             <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
               <Package className="w-12 h-12 text-gray-300" />
             </div>
-            <h2 className="text-xl font-bold text-text-dark mb-2">No orders yet</h2>
-            <p className="text-text-muted mb-8">Start shopping to see your orders here!</p>
+            <h2 className="text-xl font-bold text-text-dark mb-2">No pickup orders yet</h2>
+            <p className="text-text-muted mb-8">
+              Browse a fridge and place your first pickup order!
+            </p>
             <Link
-              to="/"
+              to="/fridge"
               className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-green text-white font-medium hover:shadow-glow-green transition-all active:scale-95"
             >
-              Browse Vegetables
+              Browse Fridges
             </Link>
           </div>
         ) : (
@@ -112,12 +107,27 @@ export default function OrderHistoryPage() {
                       </p>
                     </div>
                     <span
-                      className={`text-xs font-medium px-2.5 py-1 rounded-full border ${STATUS_STYLES[order.status]}`}
+                      className={`text-xs font-medium px-2.5 py-1 rounded-full border ${FRIDGE_ORDER_STATUS_STYLES[order.status]}`}
                     >
-                      {STATUS_LABELS[order.status]}
+                      {FRIDGE_ORDER_STATUS_LABELS[order.status]}
                     </span>
                   </div>
 
+                  {/* Fridge info */}
+                  {order.refrigerator && (
+                    <div className="flex items-center gap-2 mb-3 text-xs text-text-muted">
+                      <Box className="w-3.5 h-3.5" />
+                      <span>{order.refrigerator.name}</span>
+                      {order.refrigerator.location && (
+                        <>
+                          <MapPin className="w-3 h-3 ml-1" />
+                          <span>{order.refrigerator.location.name}</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Item emojis */}
                   <div className="flex items-center gap-1.5 mb-3">
                     {order.items.slice(0, 5).map((item) => (
                       <span key={item.id} className="text-lg" title={item.vegetable.name}>
@@ -132,17 +142,17 @@ export default function OrderHistoryPage() {
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-text-muted">
-                      {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                    </span>
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={(e) => handleReorder(e, order)}
-                        className="text-xs font-medium text-primary-green hover:bg-green-50 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all active:scale-95"
+                      <span className="text-xs text-text-muted">
+                        {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                      </span>
+                      <span
+                        className={`text-xs font-medium ${PAYMENT_STATUS_STYLES[order.paymentStatus]}`}
                       >
-                        <RotateCcw className="w-3 h-3" />
-                        Reorder
-                      </button>
+                        {order.paymentStatus}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
                       <span className="font-bold text-primary-green-dark">
                         ₹{parseFloat(order.totalAmount).toFixed(2)}
                       </span>

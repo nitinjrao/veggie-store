@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { ApiError } from '../utils/ApiError';
+import { getAuthUser } from '../utils/getUser';
 
 const vegetableInclude = {
   category: true,
@@ -11,7 +12,8 @@ const vegetableInclude = {
 };
 
 export const getFavorites = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
 
   const favorites = await prisma.favorite.findMany({
     where: { customerId },
@@ -23,7 +25,8 @@ export const getFavorites = async (req: Request, res: Response) => {
 };
 
 export const getFavoriteIds = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
 
   const favorites = await prisma.favorite.findMany({
     where: { customerId },
@@ -34,7 +37,8 @@ export const getFavoriteIds = async (req: Request, res: Response) => {
 };
 
 export const addFavorite = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
   const vegetableId = req.params.vegetableId as string;
 
   const vegetable = await prisma.vegetable.findUnique({ where: { id: vegetableId } });
@@ -52,7 +56,8 @@ export const addFavorite = async (req: Request, res: Response) => {
 };
 
 export const removeFavorite = async (req: Request, res: Response) => {
-  const customerId = req.user!.id;
+  const user = getAuthUser(req);
+  const customerId = user.id;
   const vegetableId = req.params.vegetableId as string;
 
   await prisma.favorite.deleteMany({

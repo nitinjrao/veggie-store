@@ -6,13 +6,55 @@ services:
     container_name: veggie-store-db
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '5433:5432'
     environment:
       POSTGRES_USER: veggie
       POSTGRES_PASSWORD: veggie123
       POSTGRES_DB: veggie_store
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U veggie -d veggie_store']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: veggie-store-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://veggie:veggie123@postgres:5432/veggie_store?schema=public
+      PORT: 3000
+      CLIENT_URL: http://localhost:5173
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON}
+    volumes:
+      - uploads:/app/uploads
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+    container_name: veggie-store-client
+    restart: unless-stopped
+    ports:
+      - '8080:80'
+    depends_on:
+      - server
 
 volumes:
   pgdata:
+  uploads:

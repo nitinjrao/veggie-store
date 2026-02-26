@@ -33,7 +33,7 @@ export default function AdminVegetablesPage() {
       await adminService.deleteVegetable(id);
       setVegetables((prev) => prev.filter((v) => v.id !== id));
       toast.success('Vegetable removed');
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete vegetable');
     } finally {
       setDeleting(null);
@@ -136,9 +136,7 @@ export default function AdminVegetablesPage() {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                          v.available
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
+                          v.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                         }`}
                       >
                         {v.available ? 'Available' : 'Unavailable'}

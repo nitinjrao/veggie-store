@@ -13,15 +13,20 @@ export default function FavoritesPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLoading(false);
-      return;
-    }
+    if (!isAuthenticated) return;
+    let cancelled = false;
     favoriteService
       .getAll()
-      .then(setFavorites)
+      .then((data) => {
+        if (!cancelled) setFavorites(data);
+      })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthenticated]);
 
   return (

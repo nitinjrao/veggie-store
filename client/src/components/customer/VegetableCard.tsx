@@ -32,13 +32,20 @@ function getDisplayPrice(vegetable: Vegetable, unit: UnitType): number | null {
 
 function getUnitSuffix(unit: UnitType): string {
   switch (unit) {
-    case 'KG': return '/kg';
-    case 'GRAM': return '/kg';
-    case 'PIECE': return '/piece';
-    case 'PACKET': return '/packet';
-    case 'BUNDLE': return '/bundle';
-    case 'BUNCH': return '/bunch';
-    default: return '';
+    case 'KG':
+      return '/kg';
+    case 'GRAM':
+      return '/kg';
+    case 'PIECE':
+      return '/piece';
+    case 'PACKET':
+      return '/packet';
+    case 'BUNDLE':
+      return '/bundle';
+    case 'BUNCH':
+      return '/bunch';
+    default:
+      return '';
   }
 }
 
@@ -87,7 +94,9 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
       )}
 
       {/* Emoji with float animation on hover */}
-      <div className={`text-4xl text-center mb-2 py-2 group-hover:animate-float transition-transform ${vegetable.name === 'Radish' ? 'grayscale brightness-150' : ''}`}>
+      <div
+        className={`text-4xl text-center mb-2 py-2 group-hover:animate-float transition-transform ${vegetable.name === 'Radish' ? 'grayscale brightness-150' : ''}`}
+      >
         {vegetable.emoji || '🥬'}
       </div>
 
@@ -104,7 +113,8 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
       <div className="mt-auto pt-3 space-y-0.5 relative z-10">
         {displayPrice !== null && (
           <p className="text-base font-bold text-primary-green-dark">
-            ₹{displayPrice}<span className="text-xs font-medium text-text-muted">{unitSuffix}</span>
+            ₹{displayPrice}
+            <span className="text-xs font-medium text-text-muted">{unitSuffix}</span>
           </p>
         )}
         {selectedUnit === 'KG' && price?.pricePerPacket && packetWeight && (

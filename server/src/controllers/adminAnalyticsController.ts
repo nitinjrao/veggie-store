@@ -8,14 +8,12 @@ export const getSalesData = async (req: Request, res: Response) => {
   startDate.setHours(0, 0, 0, 0);
 
   // Daily revenue and order counts
-  const dailyData = await prisma.$queryRaw<
-    { date: Date; revenue: string; order_count: string }[]
-  >`
+  const dailyData = await prisma.$queryRaw<{ date: Date; revenue: string; order_count: string }[]>`
     SELECT
       DATE(created_at) as date,
       COALESCE(SUM(total_amount), 0) as revenue,
       COUNT(*)::text as order_count
-    FROM orders
+    FROM fridge_pickup_orders
     WHERE created_at >= ${startDate}
       AND status != 'CANCELLED'
     GROUP BY DATE(created_at)
@@ -39,20 +37,27 @@ export const getTopProducts = async (req: Request, res: Response) => {
   startDate.setHours(0, 0, 0, 0);
 
   const topProducts = await prisma.$queryRaw<
-    { id: string; name: string; emoji: string | null; total_quantity: string; total_revenue: string; order_count: string }[]
+    {
+      id: string;
+      name: string;
+      emoji: string | null;
+      total_quantity: string;
+      total_revenue: string;
+      order_count: string;
+    }[]
   >`
     SELECT
       v.id,
       v.name,
       v.emoji,
-      COALESCE(SUM(oi.quantity), 0)::text as total_quantity,
-      COALESCE(SUM(oi.total_price), 0)::text as total_revenue,
-      COUNT(DISTINCT o.id)::text as order_count
-    FROM order_items oi
-    JOIN vegetables v ON v.id = oi.vegetable_id
-    JOIN orders o ON o.id = oi.order_id
-    WHERE o.created_at >= ${startDate}
-      AND o.status != 'CANCELLED'
+      COALESCE(SUM(fi.quantity), 0)::text as total_quantity,
+      COALESCE(SUM(fi.total_price), 0)::text as total_revenue,
+      COUNT(DISTINCT fo.id)::text as order_count
+    FROM fridge_pickup_items fi
+    JOIN vegetables v ON v.id = fi.vegetable_id
+    JOIN fridge_pickup_orders fo ON fo.id = fi.fridge_pickup_order_id
+    WHERE fo.created_at >= ${startDate}
+      AND fo.status != 'CANCELLED'
     GROUP BY v.id, v.name, v.emoji
     ORDER BY total_revenue DESC
     LIMIT ${limit}
@@ -80,12 +85,12 @@ export const getSalesSummary = async (req: Request, res: Response) => {
   prevStartDate.setDate(prevStartDate.getDate() - days);
 
   const [current, previous, statusBreakdown] = await Promise.all([
-    prisma.order.aggregate({
+    prisma.fridgePickupOrder.aggregate({
       where: { createdAt: { gte: startDate }, status: { not: 'CANCELLED' } },
       _sum: { totalAmount: true },
       _count: true,
     }),
-    prisma.order.aggregate({
+    prisma.fridgePickupOrder.aggregate({
       where: {
         createdAt: { gte: prevStartDate, lt: startDate },
         status: { not: 'CANCELLED' },
@@ -93,7 +98,7 @@ export const getSalesSummary = async (req: Request, res: Response) => {
       _sum: { totalAmount: true },
       _count: true,
     }),
-    prisma.order.groupBy({
+    prisma.fridgePickupOrder.groupBy({
       by: ['status'],
       where: { createdAt: { gte: startDate } },
       _count: true,
@@ -103,16 +108,12 @@ export const getSalesSummary = async (req: Request, res: Response) => {
   const currentRevenue = Number(current._sum.totalAmount ?? 0);
   const previousRevenue = Number(previous._sum.totalAmount ?? 0);
   const revenueChange =
-    previousRevenue > 0
-      ? ((currentRevenue - previousRevenue) / previousRevenue) * 100
-      : 0;
+    previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
   const currentOrders = current._count;
   const previousOrders = previous._count;
   const ordersChange =
-    previousOrders > 0
-      ? ((currentOrders - previousOrders) / previousOrders) * 100
-      : 0;
+    previousOrders > 0 ? ((currentOrders - previousOrders) / previousOrders) * 100 : 0;
 
   res.json({
     revenue: currentRevenue,
@@ -133,17 +134,28 @@ export const exportSalesCsv = async (req: Request, res: Response) => {
   startDate.setDate(startDate.getDate() - days);
   startDate.setHours(0, 0, 0, 0);
 
-  const orders = await prisma.order.findMany({
+  const orders = await prisma.fridgePickupOrder.findMany({
     where: { createdAt: { gte: startDate } },
     include: {
       customer: { select: { name: true, phone: true } },
       items: { include: { vegetable: { select: { name: true } } } },
+      refrigerator: { include: { location: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
 
   const rows = [
-    ['Order Number', 'Date', 'Customer', 'Phone', 'Items', 'Total', 'Status'].join(','),
+    [
+      'Order Number',
+      'Date',
+      'Customer',
+      'Phone',
+      'Fridge',
+      'Location',
+      'Items',
+      'Total',
+      'Status',
+    ].join(','),
   ];
 
   for (const order of orders) {
@@ -154,6 +166,8 @@ export const exportSalesCsv = async (req: Request, res: Response) => {
         order.createdAt.toISOString().slice(0, 10),
         `"${(order.customer?.name || 'N/A').replace(/"/g, '""')}"`,
         order.customer?.phone || '',
+        `"${order.refrigerator.name.replace(/"/g, '""')}"`,
+        `"${order.refrigerator.location.name.replace(/"/g, '""')}"`,
         `"${itemNames.replace(/"/g, '""')}"`,
         order.totalAmount.toString(),
         order.status,

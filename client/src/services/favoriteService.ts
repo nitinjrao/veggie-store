@@ -6,9 +6,7 @@ export const favoriteService = {
 
   getIds: () => api.get<string[]>('/favorites/ids').then((r) => r.data),
 
-  add: (vegetableId: string) =>
-    api.post(`/favorites/${vegetableId}`).then((r) => r.data),
+  add: (vegetableId: string) => api.post(`/favorites/${vegetableId}`).then((r) => r.data),
 
-  remove: (vegetableId: string) =>
-    api.delete(`/favorites/${vegetableId}`).then((r) => r.data),
+  remove: (vegetableId: string) => api.delete(`/favorites/${vegetableId}`).then((r) => r.data),
 };

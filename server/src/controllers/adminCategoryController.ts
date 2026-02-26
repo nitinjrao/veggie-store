@@ -81,7 +81,10 @@ export const adminDeleteCategory = async (req: Request, res: Response) => {
     throw new ApiError(404, 'Category not found');
   }
   if (existing._count.vegetables > 0) {
-    throw new ApiError(400, `Cannot delete: ${existing._count.vegetables} vegetable(s) in this category`);
+    throw new ApiError(
+      400,
+      `Cannot delete: ${existing._count.vegetables} vegetable(s) in this category`
+    );
   }
 
   await prisma.category.delete({ where: { id } });

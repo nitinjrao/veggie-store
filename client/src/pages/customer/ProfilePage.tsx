@@ -6,6 +6,7 @@ import Header from '../../components/common/Header';
 import { useAuthStore } from '../../stores/authStore';
 import { addressService } from '../../services/addressService';
 import api from '../../services/api';
+import { getErrorMessage } from '../../utils/error';
 import type { Address } from '../../types';
 
 export default function ProfilePage() {
@@ -30,6 +31,7 @@ export default function ProfilePage() {
     }
     loadAddresses();
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const loadProfile = async () => {
@@ -37,7 +39,9 @@ export default function ProfilePage() {
       const { data } = await api.get('/auth/profile');
       setWhatsapp(data.whatsapp || '');
       setWhatsappSaved(data.whatsapp || '');
-    } catch {}
+    } catch {
+      // silently ignore profile load failure
+    }
   };
 
   const handleSaveWhatsapp = async () => {
@@ -105,8 +109,8 @@ export default function ProfilePage() {
       }
       resetForm();
       await loadAddresses();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to save address');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -155,12 +159,8 @@ export default function ProfilePage() {
               <User className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-text-dark text-lg">
-                {user?.name || 'Customer'}
-              </h2>
-              <p className="text-sm text-text-muted">
-                {user?.phone || user?.email}
-              </p>
+              <h2 className="font-bold text-text-dark text-lg">{user?.name || 'Customer'}</h2>
+              <p className="text-sm text-text-muted">{user?.phone || user?.email}</p>
             </div>
           </div>
         </div>
@@ -204,7 +204,10 @@ export default function ProfilePage() {
             </div>
             {!showForm && (
               <button
-                onClick={() => { resetForm(); setShowForm(true); }}
+                onClick={() => {
+                  resetForm();
+                  setShowForm(true);
+                }}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-green text-white text-sm font-medium hover:shadow-glow-green transition-all active:scale-95"
               >
                 <Plus className="w-4 h-4" />
@@ -220,7 +223,10 @@ export default function ProfilePage() {
                 <h3 className="font-semibold text-text-dark">
                   {editingId ? 'Edit Address' : 'New Address'}
                 </h3>
-                <button onClick={resetForm} className="p-1.5 rounded-lg hover:bg-gray-100 text-text-muted transition-colors">
+                <button
+                  onClick={resetForm}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-text-muted transition-colors"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>

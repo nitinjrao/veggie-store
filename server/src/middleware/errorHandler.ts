@@ -2,12 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { ApiError } from '../utils/ApiError';
 
-export const errorHandler = (
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
-) => {
+export const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({ error: err.message });
     return;

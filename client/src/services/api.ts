@@ -18,16 +18,28 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    const isDevBypass = import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_API_KEY;
+    if (error.response?.status === 401 && !isDevBypass) {
       // Only redirect if user was on a page that requires auth
       const isAdminRoute = error.config?.url?.includes('/admin');
-      const isAuthRequired = ['/favorites', '/orders', '/addresses'].some(
-        (path) => error.config?.url?.includes(path)
+      const isStaffRoute =
+        error.config?.url?.includes('/staff') ||
+        ['/producer', '/supplier', '/transporter'].some((p) =>
+          window.location.pathname.startsWith(p)
+        );
+      const isAuthRequired = ['/favorites', '/orders', '/addresses'].some((path) =>
+        error.config?.url?.includes(path)
       );
-      if (isAdminRoute || isAuthRequired) {
+      if (isAdminRoute || isStaffRoute || isAuthRequired) {
         await signOut(auth);
         localStorage.removeItem('user');
-        window.location.href = isAdminRoute ? '/admin/login' : '/login';
+        if (isAdminRoute) {
+          window.location.href = '/admin/login';
+        } else if (isStaffRoute) {
+          window.location.href = '/staff/login';
+        } else {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

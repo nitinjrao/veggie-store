@@ -1,5 +1,18 @@
 import { Outlet, Navigate, Link, NavLink, useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Package, FolderOpen, ShoppingCart, Users, BarChart3, Share2, Menu, X } from 'lucide-react';
+import {
+  LogOut,
+  LayoutDashboard,
+  Package,
+  FolderOpen,
+  Users,
+  BarChart3,
+  Share2,
+  Menu,
+  X,
+  UsersRound,
+  MapPinned,
+  ClipboardList,
+} from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useInitialize } from '../../hooks/useInitialize';
 import { useState } from 'react';
@@ -8,8 +21,10 @@ const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/vegetables', label: 'Vegetables', icon: Package, end: false },
   { to: '/admin/categories', label: 'Categories', icon: FolderOpen, end: false },
-  { to: '/admin/orders', label: 'Orders', icon: ShoppingCart, end: false },
   { to: '/admin/customers', label: 'Customers', icon: Users, end: false },
+  { to: '/admin/staff', label: 'Staff', icon: UsersRound, end: false },
+  { to: '/admin/pickup-points', label: 'Pickup Points', icon: MapPinned, end: false },
+  { to: '/admin/orders', label: 'Orders', icon: ClipboardList, end: false },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3, end: false },
   { to: '/admin/share', label: 'Share', icon: Share2, end: false },
 ];
@@ -91,7 +106,10 @@ export default function AdminLayout() {
 
       {/* Mobile nav drawer */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black/20" onClick={() => setMobileOpen(false)}>
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/20"
+          onClick={() => setMobileOpen(false)}
+        >
           <div
             className="absolute top-14 right-0 w-56 bg-white border-l border-gray-100 shadow-xl p-3 space-y-1 animate-fade-in"
             onClick={(e) => e.stopPropagation()}

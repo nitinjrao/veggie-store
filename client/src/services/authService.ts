@@ -57,6 +57,15 @@ export const authService = {
     return data.user;
   },
 
+  staffLogin: async (email: string, password: string): Promise<User> => {
+    await signInWithEmailAndPassword(auth, email, password);
+    const idToken = await auth.currentUser!.getIdToken();
+    const { data } = await api.post<FirebaseLoginResponse>('/staff/firebase-login', {
+      idToken,
+    });
+    return data.user;
+  },
+
   logout: async () => {
     await signOut(auth);
   },

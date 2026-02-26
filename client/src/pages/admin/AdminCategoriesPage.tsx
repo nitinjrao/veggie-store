@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, GripVertical, X, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Check, Layers, ArrowUpDown, Leaf } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../../utils/error';
 import { adminService } from '../../services/adminService';
 import type { AdminCategory, CategoryFormData } from '../../services/adminService';
 
@@ -70,8 +71,8 @@ export default function AdminCategoriesPage() {
       }
       setShowForm(false);
       setEditingId(null);
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to save category');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -84,8 +85,8 @@ export default function AdminCategoriesPage() {
       await adminService.deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
       toast.success('Category deleted');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to delete category');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setDeleting(null);
     }
@@ -100,76 +101,100 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="animate-fade-in">
+      {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-heading font-bold text-2xl">Categories</h1>
+        <div>
+          <h1 className="font-heading font-bold text-2xl text-text-dark">Categories</h1>
+          <p className="text-sm text-text-muted mt-1">
+            {categories.length} {categories.length === 1 ? 'category' : 'categories'} total
+          </p>
+        </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-green text-white rounded-lg hover:bg-primary-green-dark transition text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary-green text-white rounded-xl hover:bg-primary-green-dark transition shadow-sm text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
           Add Category
         </button>
       </div>
 
-      {/* Inline Form */}
+      {/* Inline Create/Edit Form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6 animate-in fade-in slide-in-from-top-2">
-          <h2 className="font-medium text-text-dark mb-4">
-            {editingId ? 'Edit Category' : 'New Category'}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6 animate-fade-in">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+              <Layers className="w-4 h-4 text-primary-green" />
+            </div>
+            <h2 className="font-heading font-bold text-lg text-text-dark">
+              {editingId ? 'Edit Category' : 'New Category'}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-1">Name (English) *</label>
+              <label className="block text-sm font-medium text-text-dark mb-1.5">
+                Name (English) <span className="text-red-400">*</span>
+              </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent transition"
                 placeholder="e.g. Leafy Greens"
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-1">Sort Order</label>
+              <label className="block text-sm font-medium text-text-dark mb-1.5">Sort Order</label>
               <input
                 type="number"
                 value={form.sortOrder ?? 0}
                 onChange={(e) => setForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent transition"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-1">Name (Hindi)</label>
+              <label className="block text-sm font-medium text-text-dark mb-1.5">
+                Name (Hindi)
+              </label>
               <input
                 type="text"
                 value={form.nameHindi || ''}
                 onChange={(e) => setForm((f) => ({ ...f, nameHindi: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent transition"
+                placeholder="Hindi name"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-dark mb-1">Name (Kannada)</label>
+              <label className="block text-sm font-medium text-text-dark mb-1.5">
+                Name (Kannada)
+              </label>
               <input
                 type="text"
                 value={form.nameKannada || ''}
                 onChange={(e) => setForm((f) => ({ ...f, nameKannada: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent transition"
+                placeholder="Kannada name"
               />
             </div>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex items-center gap-3 pt-2 border-t border-gray-50">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary-green text-white rounded-lg hover:bg-primary-green-dark transition text-sm font-medium disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary-green text-white rounded-xl hover:bg-primary-green-dark transition text-sm font-medium disabled:opacity-50 shadow-sm"
             >
               <Check className="w-4 h-4" />
-              {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
+              {saving ? 'Saving...' : editingId ? 'Update Category' : 'Create Category'}
             </button>
             <button
-              onClick={() => { setShowForm(false); setEditingId(null); }}
-              className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-sm text-text-muted hover:bg-gray-50 transition"
+              onClick={() => {
+                setShowForm(false);
+                setEditingId(null);
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm text-text-muted hover:bg-gray-50 hover:text-text-dark transition"
             >
               <X className="w-4 h-4" />
               Cancel
@@ -178,66 +203,98 @@ export default function AdminCategoriesPage() {
         </div>
       )}
 
-      {/* Categories List */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium text-text-muted w-10">#</th>
-              <th className="text-left px-4 py-3 font-medium text-text-muted">Category</th>
-              <th className="text-left px-4 py-3 font-medium text-text-muted">Hindi</th>
-              <th className="text-left px-4 py-3 font-medium text-text-muted">Kannada</th>
-              <th className="text-center px-4 py-3 font-medium text-text-muted">Items</th>
-              <th className="text-right px-4 py-3 font-medium text-text-muted">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {categories.map((cat) => (
-              <tr key={cat.id} className="hover:bg-gray-50/50 group">
-                <td className="px-4 py-3 text-text-muted">
-                  <div className="flex items-center gap-1">
-                    <GripVertical className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition" />
-                    {cat.sortOrder}
-                  </div>
-                </td>
-                <td className="px-4 py-3 font-medium text-text-dark">{cat.name}</td>
-                <td className="px-4 py-3 text-text-muted font-hindi">{cat.nameHindi || '-'}</td>
-                <td className="px-4 py-3 text-text-muted">{cat.nameKannada || '-'}</td>
-                <td className="px-4 py-3 text-center">
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-50 text-green-700 text-xs font-medium">
-                    {cat._count.vegetables}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => openEdit(cat)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-text-muted hover:text-text-dark transition"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(cat.id)}
-                      disabled={deleting === cat.id || cat._count.vegetables > 0}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-text-muted hover:text-red-600 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                      title={cat._count.vegetables > 0 ? 'Cannot delete: has vegetables' : 'Delete category'}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {categories.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
-                  No categories yet. Click "Add Category" to create one.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Empty State */}
+      {categories.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 py-16 px-6 text-center animate-fade-in">
+          <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4">
+            <Leaf className="w-8 h-8 text-primary-green" />
+          </div>
+          <h3 className="font-heading font-bold text-lg text-text-dark mb-2">No categories yet</h3>
+          <p className="text-sm text-text-muted mb-6 max-w-sm mx-auto">
+            Categories help organize your vegetables into groups. Create your first category to get
+            started.
+          </p>
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-green text-white rounded-xl hover:bg-primary-green-dark transition text-sm font-medium shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Create First Category
+          </button>
+        </div>
+      )}
+
+      {/* Category Cards Grid */}
+      {categories.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categories.map((cat) => (
+            <div
+              key={cat.id}
+              className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all duration-200 group"
+            >
+              {/* Card Top: Name + Actions */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-heading font-bold text-base text-text-dark truncate">
+                    {cat.name}
+                  </h3>
+                </div>
+                <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => openEdit(cat)}
+                    className="p-1.5 rounded-lg hover:bg-green-50 text-text-muted hover:text-primary-green transition"
+                    title="Edit category"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(cat.id)}
+                    disabled={deleting === cat.id || cat._count.vegetables > 0}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-text-muted hover:text-red-600 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={
+                      cat._count.vegetables > 0
+                        ? 'Cannot delete: has vegetables'
+                        : 'Delete category'
+                    }
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Multilingual Names */}
+              <div className="space-y-1 mb-4">
+                {cat.nameHindi && (
+                  <p className="text-sm text-text-muted font-hindi">
+                    <span className="text-xs text-gray-400 mr-1.5">HI</span>
+                    {cat.nameHindi}
+                  </p>
+                )}
+                {cat.nameKannada && (
+                  <p className="text-sm text-text-muted">
+                    <span className="text-xs text-gray-400 mr-1.5">KN</span>
+                    {cat.nameKannada}
+                  </p>
+                )}
+                {!cat.nameHindi && !cat.nameKannada && (
+                  <p className="text-xs text-gray-300 italic">No translations added</p>
+                )}
+              </div>
+
+              {/* Card Footer: Item Count + Sort Order */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-primary-green text-xs font-medium">
+                  <Leaf className="w-3 h-3" />
+                  {cat._count.vegetables} {cat._count.vegetables === 1 ? 'item' : 'items'}
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                  <ArrowUpDown className="w-3 h-3" />#{cat.sortOrder}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

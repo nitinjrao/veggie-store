@@ -4,38 +4,32 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, MapPin } from 'lucide-rea
 import toast from 'react-hot-toast';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
-import { orderService } from '../../services/orderService';
-import { addressService } from '../../services/addressService';
-import type { UnitType, Address } from '../../types';
+import { fridgeService } from '../../services/fridgeService';
+import type { UnitType } from '../../types';
 import Header from '../../components/common/Header';
+import { getErrorMessage } from '../../utils/error';
 import { getAvailableUnits, UNIT_LABELS } from '../../utils/pricing';
+import FridgeSelect from '../../components/common/FridgeSelect';
 
 export default function CartPage() {
   const { items, removeItem, incrementItem, decrementItem, updateUnit, clearCart } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
-  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
-  const [newAddress, setNewAddress] = useState('');
-  const [saveNewAddress, setSaveNewAddress] = useState(false);
-  const [newAddressLabel, setNewAddressLabel] = useState('');
+  const [locations, setLocations] = useState<
+    { id: string; name: string; refrigerators: { id: string; name: string }[] }[]
+  >([]);
+  const [selectedFridgeId, setSelectedFridgeId] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stockError, setStockError] = useState('');
 
   useEffect(() => {
-    if (isAuthenticated) {
-      addressService.getAll().then((addrs) => {
-        setSavedAddresses(addrs);
-        const def = addrs.find((a) => a.isDefault);
-        if (def) setSelectedAddressId(def.id);
-        else if (addrs.length > 0) setSelectedAddressId(addrs[0].id);
-      }).catch(() => {});
-    }
-  }, [isAuthenticated]);
-
-  const isNewAddress = selectedAddressId === '__new__' || savedAddresses.length === 0;
+    fridgeService
+      .getLocations()
+      .then(setLocations)
+      .catch(() => {});
+  }, []);
 
   const total = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
@@ -49,34 +43,19 @@ export default function CartPage() {
     setError('');
 
     try {
-      // Resolve effective address
-      let effectiveAddress = '';
-      if (isNewAddress) {
-        effectiveAddress = newAddress.trim();
-        if (saveNewAddress && effectiveAddress && newAddressLabel.trim()) {
-          try {
-            await addressService.create({ label: newAddressLabel.trim(), text: effectiveAddress });
-          } catch { /* address save is best-effort */ }
-        }
-      } else {
-        const selected = savedAddresses.find((a) => a.id === selectedAddressId);
-        effectiveAddress = selected?.text || '';
-      }
-
-      const order = await orderService.placeOrder({
+      const order = await fridgeService.placePickupOrder({
+        refrigeratorId: selectedFridgeId,
         items: items.map((item) => ({
           vegetableId: item.vegetableId,
           quantity: item.quantity,
           unit: item.unit,
         })),
-        address: effectiveAddress || undefined,
-        notes: notes || undefined,
       });
 
       clearCart();
       navigate(`/orders/${order.id}/confirmation`);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to place order. Please try again.';
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err);
       setError(msg);
       toast.error(msg);
 
@@ -132,7 +111,9 @@ export default function CartPage() {
                 key={item.vegetableId}
                 className={`bg-white rounded-2xl border shadow-card p-4 flex items-center gap-4 group hover:shadow-card-hover transition-all duration-200 ${isStockError ? 'border-red-300 bg-red-50/50 ring-1 ring-red-200' : 'border-gray-100'}`}
               >
-                <span className="text-3xl shrink-0 group-hover:animate-bounce-gentle">{item.vegetable.emoji || '🥬'}</span>
+                <span className="text-3xl shrink-0 group-hover:animate-bounce-gentle">
+                  {item.vegetable.emoji || '🥬'}
+                </span>
 
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm text-text-dark">{item.vegetable.name}</h3>
@@ -193,70 +174,24 @@ export default function CartPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-6 space-y-4 animate-fade-in-up">
-          <h2 className="font-bold text-text-dark">Delivery Details</h2>
+          <h2 className="font-bold text-text-dark">Pickup Location</h2>
 
           <div>
-            <label className="block text-sm font-medium text-text-muted mb-1.5">Delivery Address</label>
-            {savedAddresses.length > 0 && (
-              <select
-                value={selectedAddressId}
-                onChange={(e) => setSelectedAddressId(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all mb-2 bg-white"
-              >
-                {savedAddresses.map((addr) => (
-                  <option key={addr.id} value={addr.id}>
-                    {addr.label}{addr.isDefault ? ' (Default)' : ''} — {addr.text.slice(0, 60)}{addr.text.length > 60 ? '...' : ''}
-                  </option>
-                ))}
-                <option value="__new__">Enter a new address...</option>
-              </select>
-            )}
-            {isNewAddress && (
-              <>
-                <textarea
-                  value={newAddress}
-                  onChange={(e) => setNewAddress(e.target.value)}
-                  placeholder="Enter your delivery address..."
-                  rows={2}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all resize-none"
-                />
-                {isAuthenticated && (
-                  <div className="mt-2 space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={saveNewAddress}
-                        onChange={(e) => setSaveNewAddress(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-primary-green focus:ring-primary-green/40"
-                      />
-                      <span className="text-sm text-text-muted">Save this address</span>
-                    </label>
-                    {saveNewAddress && (
-                      <input
-                        type="text"
-                        value={newAddressLabel}
-                        onChange={(e) => setNewAddressLabel(e.target.value)}
-                        placeholder="Label (e.g. Home, Work)"
-                        className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
-                      />
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-            {isAuthenticated && (
-              <Link
-                to="/profile"
-                className="inline-flex items-center gap-1 mt-2 text-xs text-primary-green hover:underline"
-              >
-                <MapPin className="w-3 h-3" />
-                Manage saved addresses
-              </Link>
-            )}
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
+              <MapPin className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
+              Select a Fridge
+            </label>
+            <FridgeSelect
+              locations={locations}
+              value={selectedFridgeId}
+              onChange={setSelectedFridgeId}
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-muted mb-1.5">Notes (optional)</label>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
+              Notes (optional)
+            </label>
             <input
               type="text"
               value={notes}
@@ -273,13 +208,15 @@ export default function CartPage() {
             </div>
 
             {error && (
-              <div className="mb-3 p-3 rounded-xl bg-red-50 text-red-600 text-sm animate-fade-in">{error}</div>
+              <div className="mb-3 p-3 rounded-xl bg-red-50 text-red-600 text-sm animate-fade-in">
+                {error}
+              </div>
             )}
 
             {isAuthenticated ? (
               <button
                 onClick={handlePlaceOrder}
-                disabled={loading}
+                disabled={loading || !selectedFridgeId}
                 className="w-full py-3.5 rounded-xl bg-gradient-green text-white font-bold text-base hover:shadow-glow-green transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
                 {loading ? (

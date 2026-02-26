@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
-import { orderService } from '../../services/orderService';
-import type { Order } from '../../types';
 import Header from '../../components/common/Header';
+import { fridgeService } from '../../services/fridgeService';
+import type { FridgePickupOrder } from '../../types';
 
-export default function OrderConfirmationPage() {
+export default function FridgeOrderConfirmationPage() {
   const { id } = useParams<{ id: string }>();
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<FridgePickupOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    orderService
-      .getOrderById(id)
+    fridgeService
+      .getPickupOrder(id)
       .then(setOrder)
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -40,8 +40,11 @@ export default function OrderConfirmationPage() {
         <Header />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center animate-fade-in">
           <p className="text-text-muted">Order not found.</p>
-          <Link to="/" className="text-primary-green hover:underline mt-2 inline-block font-medium">
-            Go back to shop
+          <Link
+            to="/fridge"
+            className="text-primary-green hover:underline mt-2 inline-block font-medium"
+          >
+            Go to Fridges
           </Link>
         </div>
       </>
@@ -59,12 +62,18 @@ export default function OrderConfirmationPage() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-text-dark mb-2 animate-fade-in">Order Placed!</h1>
+        <h1 className="text-2xl font-bold text-text-dark mb-2 animate-fade-in">
+          Pickup Order Placed!
+        </h1>
         <p className="text-text-muted mb-1 animate-fade-in">
-          Your order <span className="font-bold text-text-dark">{order.orderNumber}</span> has been placed successfully.
+          Your order <span className="font-bold text-text-dark">{order.orderNumber}</span> has been
+          placed successfully.
         </p>
-        <p className="text-text-muted mb-8 animate-fade-in">We'll confirm it shortly.</p>
+        <p className="text-text-muted mb-8 animate-fade-in">
+          Head to the fridge to pick up your items.
+        </p>
 
+        {/* Order summary */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 text-left mb-6 animate-fade-in-up">
           <h2 className="font-bold text-text-dark mb-4">Order Summary</h2>
           <div className="space-y-3">
@@ -92,10 +101,10 @@ export default function OrderConfirmationPage() {
 
         <div className="flex gap-3 justify-center animate-fade-in-up">
           <Link
-            to="/orders"
+            to={`/orders/${order.id}`}
             className="px-6 py-3 rounded-xl border border-gray-200 text-text-dark text-sm font-medium hover:bg-gray-50 transition-all active:scale-95"
           >
-            View Order History
+            View Order
           </Link>
           <Link
             to="/"

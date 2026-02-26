@@ -2,38 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Phone } from 'lucide-react';
 import { adminService } from '../../services/adminService';
-import type { OrderStatus } from '../../types';
-
-interface CustomerDetail {
-  id: string;
-  name: string | null;
-  phone: string;
-  address: string | null;
-  createdAt: string;
-  totalSpend: string;
-  _count: { orders: number; favorites: number };
-  orders: {
-    id: string;
-    orderNumber: string;
-    status: OrderStatus;
-    totalAmount: string;
-    createdAt: string;
-    _count: { items: number };
-  }[];
-}
-
-const statusColor: Record<OrderStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  CONFIRMED: 'bg-blue-100 text-blue-700',
-  OUT_FOR_DELIVERY: 'bg-purple-100 text-purple-700',
-  DELIVERED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
-};
+import { formatDate } from '../../utils/formatting';
+import { FRIDGE_ORDER_STATUS_STYLES } from '../../utils/statusStyles';
+import type { AdminCustomerDetail } from '../../services/adminService';
 
 export default function AdminCustomerDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [customer, setCustomer] = useState<CustomerDetail | null>(null);
+  const [customer, setCustomer] = useState<AdminCustomerDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,13 +20,6 @@ export default function AdminCustomerDetailPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
-
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
 
   const whatsappLink = (phone: string) =>
     `https://wa.me/91${phone.replace(/\D/g, '').replace(/^91/, '')}`;
@@ -68,7 +37,7 @@ export default function AdminCustomerDetailPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <button
         onClick={() => navigate('/admin/customers')}
         className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-dark mb-4"
@@ -98,7 +67,7 @@ export default function AdminCustomerDetailPage() {
 
         <div className="grid grid-cols-3 gap-4 mt-5">
           <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <p className="text-xl font-bold text-text-dark">{customer._count.orders}</p>
+            <p className="text-xl font-bold text-text-dark">{customer._count.fridgePickupOrders}</p>
             <p className="text-xs text-text-muted">Orders</p>
           </div>
           <div className="text-center p-3 bg-gray-50 rounded-lg">
@@ -111,7 +80,9 @@ export default function AdminCustomerDetailPage() {
           </div>
         </div>
 
-        <p className="text-xs text-text-muted mt-4">Member since {formatDate(customer.createdAt)}</p>
+        <p className="text-xs text-text-muted mt-4">
+          Member since {formatDate(customer.createdAt)}
+        </p>
       </div>
 
       {/* Order History */}
@@ -119,11 +90,11 @@ export default function AdminCustomerDetailPage() {
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-medium text-text-dark">Order History</h2>
         </div>
-        {customer.orders.length === 0 ? (
+        {customer.fridgePickupOrders.length === 0 ? (
           <p className="px-5 py-8 text-center text-text-muted text-sm">No orders yet</p>
         ) : (
           <div className="divide-y divide-gray-50">
-            {customer.orders.map((order) => (
+            {customer.fridgePickupOrders.map((order) => (
               <div key={order.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
                   <Link
@@ -134,13 +105,23 @@ export default function AdminCustomerDetailPage() {
                   </Link>
                   <p className="text-xs text-text-muted">
                     {formatDate(order.createdAt)} &middot; {order._count.items} items
+                    {order.refrigerator && (
+                      <>
+                        {' '}
+                        &middot; {order.refrigerator.name}
+                        {order.refrigerator.location
+                          ? ` (${order.refrigerator.location.name})`
+                          : ''}
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium">₹{order.totalAmount}</p>
                   <span
                     className={`inline-block text-xs px-1.5 py-0.5 rounded-full ${
-                      statusColor[order.status] || 'bg-gray-100 text-gray-700'
+                      (FRIDGE_ORDER_STATUS_STYLES as Record<string, string>)[order.status] ||
+                      'bg-gray-100 text-gray-700'
                     }`}
                   >
                     {order.status.replace(/_/g, ' ')}

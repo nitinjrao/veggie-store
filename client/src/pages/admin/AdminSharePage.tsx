@@ -87,13 +87,7 @@ export default function AdminSharePage() {
           Print this QR code or display it in your store for customers to scan.
         </p>
         <div className="flex justify-center p-6 bg-white border border-gray-200 rounded-xl">
-          <QRCodeSVG
-            value={storeUrl}
-            size={200}
-            level="M"
-            includeMargin
-            fgColor="#1a1a2e"
-          />
+          <QRCodeSVG value={storeUrl} size={200} level="M" includeMargin fgColor="#1a1a2e" />
         </div>
         <div className="flex items-center gap-2 mt-4 text-xs text-text-muted">
           <Share2 className="w-3.5 h-3.5" />
