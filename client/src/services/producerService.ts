@@ -17,4 +17,15 @@ export const producerService = {
     api.put(`/producer/fridges/orders/${id}/confirm`).then((r) => r.data),
   markOrderReady: (id: string) =>
     api.put(`/producer/fridges/orders/${id}/ready`).then((r) => r.data),
+
+  // All orders
+  getAllOrders: (status?: string) =>
+    api.get('/producer/fridges/orders/all', { params: status ? { status } : {} }).then((r) => r.data),
+
+  // Procurement view (cumulative from PENDING + CONFIRMED)
+  getProcurementView: () => api.get('/producer/fridges/orders/procurement').then((r) => r.data),
+
+  // Packing views
+  getCumulativeView: () => api.get('/producer/orders/cumulative').then((r) => r.data),
+  getAssemblyView: () => api.get('/producer/orders/assembly').then((r) => r.data),
 };

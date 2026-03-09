@@ -8,13 +8,13 @@ interface CategoryFilterProps {
 
 export default function CategoryFilter({ categories, selectedId, onSelect }: CategoryFilterProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
       <button
         onClick={() => onSelect(null)}
-        className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 active:scale-95 ${
+        className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95 ${
           selectedId === null
             ? 'bg-gradient-green text-white shadow-glow-green'
-            : 'bg-white text-text-dark border border-gray-200 hover:border-primary-green hover:text-primary-green'
+            : 'bg-white text-text-dark border border-gray-200/80 hover:border-primary-green/50 hover:text-primary-green'
         }`}
       >
         All
@@ -23,15 +23,15 @@ export default function CategoryFilter({ categories, selectedId, onSelect }: Cat
         <button
           key={cat.id}
           onClick={() => onSelect(cat.id)}
-          className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 active:scale-95 ${
+          className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95 ${
             selectedId === cat.id
               ? 'bg-gradient-green text-white shadow-glow-green'
-              : 'bg-white text-text-dark border border-gray-200 hover:border-primary-green hover:text-primary-green'
+              : 'bg-white text-text-dark border border-gray-200/80 hover:border-primary-green/50 hover:text-primary-green'
           }`}
         >
           {cat.name}
           {cat._count && (
-            <span className="ml-1.5 text-xs opacity-70">({cat._count.vegetables})</span>
+            <span className="ml-1.5 text-xs opacity-60">({cat._count.vegetables})</span>
           )}
         </button>
       ))}

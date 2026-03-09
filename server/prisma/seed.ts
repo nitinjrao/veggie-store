@@ -59,15 +59,15 @@ async function main() {
 
   // ─── 4. Vegetables with Prices ──────────────────────────────────
   const vegetables = [
-    { name: 'Spinach', nameHindi: 'पालक', nameKannada: 'ಪಾಲಕ್ ಸೊಪ್ಪು', emoji: '🥬', categoryName: 'Leafy Greens', stockKg: 25, pricePerKg: 40, pricePerBunch: 15, pricePerPacket: 20, packetWeight: 0.5 },
+    { name: 'Spinach', nameHindi: 'पालक', nameKannada: 'ಪಾಲಕ್ ಸೊಪ್ಪು', emoji: '🥬', categoryName: 'Leafy Greens', stockKg: 25, pricePerKg: 40, pricePerBunch: 15, pricePerPacket: 20, packetWeight: 0.5, featured: true, originalPricePerKg: 55 },
     { name: 'Fenugreek', nameHindi: 'मेथी', nameKannada: 'ಮೆಂತ್ಯೆ ಸೊಪ್ಪು', emoji: '🌿', categoryName: 'Leafy Greens', stockKg: 15, pricePerKg: 60, pricePerBunch: 20, pricePerPacket: 30, packetWeight: 0.5 },
-    { name: 'Coriander', nameHindi: 'धनिया', nameKannada: 'ಕೊತ್ತಂಬರಿ ಸೊಪ್ಪು', emoji: '🌿', categoryName: 'Leafy Greens', stockKg: 10, pricePerKg: 80, pricePerBunch: 10, pricePerPacket: 10, packetWeight: 0.1 },
+    { name: 'Coriander', nameHindi: 'धनिया', nameKannada: 'ಕೊತ್ತಂಬರಿ ಸೊಪ್ಪು', emoji: '🌿', categoryName: 'Leafy Greens', stockKg: 10, pricePerKg: 80, pricePerBunch: 10, pricePerPacket: 10, packetWeight: 0.1, featured: true },
     { name: 'Mustard Greens', nameHindi: 'सरसों का साग', nameKannada: 'ಸಾಸಿವೆ ಸೊಪ್ಪು', emoji: '🥬', categoryName: 'Leafy Greens', stockKg: 20, pricePerKg: 40, pricePerBunch: 15, pricePerPacket: 20, packetWeight: 0.5 },
     { name: 'Curry Leaves', nameHindi: 'कड़ी पत्ता', nameKannada: 'ಕರಿಬೇವು', emoji: '🍃', categoryName: 'Leafy Greens', stockKg: 5, pricePerKg: 200, pricePerBunch: 5 },
     { name: 'Amaranth Leaves', nameHindi: 'चौलाई', nameKannada: 'ರಾಜಗಿರಿ ಸೊಪ್ಪು', emoji: '🥬', categoryName: 'Leafy Greens', stockKg: 12, pricePerKg: 50, pricePerBunch: 15 },
-    { name: 'Potato', nameHindi: 'आलू', nameKannada: 'ಆಲೂಗಡ್ಡೆ', emoji: '🥔', categoryName: 'Root Vegetables', stockKg: 100, pricePerKg: 30 },
-    { name: 'Onion', nameHindi: 'प्याज', nameKannada: 'ಈರುಳ್ಳಿ', emoji: '🧅', categoryName: 'Root Vegetables', stockKg: 80, pricePerKg: 35 },
-    { name: 'Carrot', nameHindi: 'गाजर', nameKannada: 'ಕ್ಯಾರೆಟ್', emoji: '🥕', categoryName: 'Root Vegetables', stockKg: 40, pricePerKg: 50 },
+    { name: 'Potato', nameHindi: 'आलू', nameKannada: 'ಆಲೂಗಡ್ಡೆ', emoji: '🥔', categoryName: 'Root Vegetables', stockKg: 100, pricePerKg: 30, featured: true },
+    { name: 'Onion', nameHindi: 'प्याज', nameKannada: 'ಈರುಳ್ಳಿ', emoji: '🧅', categoryName: 'Root Vegetables', stockKg: 80, pricePerKg: 35, featured: true },
+    { name: 'Carrot', nameHindi: 'गाजर', nameKannada: 'ಕ್ಯಾರೆಟ್', emoji: '🥕', categoryName: 'Root Vegetables', stockKg: 40, pricePerKg: 50, featured: true, originalPricePerKg: 65 },
     { name: 'Radish', nameHindi: 'मूली', nameKannada: 'ಮೂಲಂಗಿ', emoji: '🥕', categoryName: 'Root Vegetables', stockKg: 30, pricePerKg: 30, pricePerPiece: 10 },
     { name: 'Beetroot', nameHindi: 'चुकंदर', nameKannada: 'ಬೀಟ್ರೂಟ್', emoji: '🟣', categoryName: 'Root Vegetables', stockKg: 25, pricePerKg: 40 },
     { name: 'Bottle Gourd', nameHindi: 'लौकी', nameKannada: 'ಸೊರೆಕಾಯಿ', emoji: '🫛', categoryName: 'Gourds & Squash', stockKg: 35, pricePerKg: 35, pricePerPiece: 30 },
@@ -75,11 +75,11 @@ async function main() {
     { name: 'Pumpkin', nameHindi: 'कद्दू', nameKannada: 'ಕುಂಬಳಕಾಯಿ', emoji: '🎃', categoryName: 'Gourds & Squash', stockKg: 50, pricePerKg: 30 },
     { name: 'Ridge Gourd', nameHindi: 'तोरई', nameKannada: 'ಹೆರೆಕಾಯಿ', emoji: '🥒', categoryName: 'Gourds & Squash', stockKg: 25, pricePerKg: 40 },
     { name: 'Ash Gourd', nameHindi: 'पेठा', nameKannada: 'ಬೂದುಗುಂಬಳ', emoji: '🟢', categoryName: 'Gourds & Squash', stockKg: 30, pricePerKg: 25, pricePerPiece: 40 },
-    { name: 'French Beans', nameHindi: 'फ्रेंच बीन्स', nameKannada: 'ಫ್ರೆಂಚ್ ಬೀನ್ಸ್', emoji: '🫘', categoryName: 'Beans & Legumes', stockKg: 20, pricePerKg: 80, pricePerPacket: 40, packetWeight: 0.5 },
-    { name: 'Green Peas', nameHindi: 'मटर', nameKannada: 'ಅವರೆಕಾಳು / ಬಟಾಣಿ', emoji: '🟢', categoryName: 'Beans & Legumes', stockKg: 30, pricePerKg: 100, pricePerPacket: 50, packetWeight: 0.5 },
+    { name: 'French Beans', nameHindi: 'फ्रेंच बीन्स', nameKannada: 'ಫ್ರೆಂಚ್ ಬೀನ್ಸ್', emoji: '🫘', categoryName: 'Beans & Legumes', stockKg: 20, pricePerKg: 80, pricePerPacket: 40, packetWeight: 0.5, originalPricePerKg: 110 },
+    { name: 'Green Peas', nameHindi: 'मटर', nameKannada: 'ಅವರೆಕಾಳು / ಬಟಾಣಿ', emoji: '🟢', categoryName: 'Beans & Legumes', stockKg: 30, pricePerKg: 100, pricePerPacket: 50, packetWeight: 0.5, featured: true, originalPricePerKg: 140 },
     { name: 'Cluster Beans', nameHindi: 'ग्वार फली', nameKannada: 'ಗೋರಿಕಾಯಿ', emoji: '🫘', categoryName: 'Beans & Legumes', stockKg: 15, pricePerKg: 70 },
     { name: 'Broad Beans', nameHindi: 'सेम', nameKannada: 'ಅವರೆಕಾಯಿ', emoji: '🫛', categoryName: 'Beans & Legumes', stockKg: 18, pricePerKg: 60 },
-    { name: 'Tomato', nameHindi: 'टमाटर', nameKannada: 'ಟೊಮೇಟೊ', emoji: '🍅', categoryName: 'Everyday Essentials', stockKg: 60, pricePerKg: 40 },
+    { name: 'Tomato', nameHindi: 'टमाटर', nameKannada: 'ಟೊಮೇಟೊ', emoji: '🍅', categoryName: 'Everyday Essentials', stockKg: 60, pricePerKg: 40, featured: true },
     { name: 'Green Chili', nameHindi: 'हरी मिर्च', nameKannada: 'ಹಸಿಮೆಣಸಿನಕಾಯಿ', emoji: '🌶️', categoryName: 'Everyday Essentials', stockKg: 10, pricePerKg: 80, pricePerPacket: 10, packetWeight: 0.1 },
     { name: 'Ginger', nameHindi: 'अदरक', nameKannada: 'ಶುಂಠಿ', emoji: '🫚', categoryName: 'Everyday Essentials', stockKg: 15, pricePerKg: 200 },
     { name: 'Garlic', nameHindi: 'लहसुन', nameKannada: 'ಬೆಳ್ಳುಳ್ಳಿ', emoji: '🧄', categoryName: 'Everyday Essentials', stockKg: 20, pricePerKg: 250 },
@@ -87,15 +87,15 @@ async function main() {
     { name: 'Drumstick', nameHindi: 'सहजन', nameKannada: 'ನುಗ್ಗೆಕಾಯಿ', emoji: '🥢', categoryName: 'Everyday Essentials', stockKg: 20, pricePerKg: 60, pricePerPiece: 8 },
     { name: 'Brinjal', nameHindi: 'बैंगन', nameKannada: 'ಬದನೆಕಾಯಿ', emoji: '🍆', categoryName: 'Everyday Essentials', stockKg: 30, pricePerKg: 40 },
     { name: 'Lady Finger', nameHindi: 'भिंडी', nameKannada: 'ಬೆಂಡೆಕಾಯಿ', emoji: '🟢', categoryName: 'Everyday Essentials', stockKg: 25, pricePerKg: 50 },
-    { name: 'Broccoli', nameHindi: 'ब्रोकोली', nameKannada: 'ಬ್ರೋಕಲಿ', emoji: '🥦', categoryName: 'Exotic & Specialty', stockKg: 15, pricePerKg: 120, pricePerPiece: 60 },
-    { name: 'Capsicum', nameHindi: 'शिमला मिर्च', nameKannada: 'ದೆಳ್ಳುಮೆಣಸಿನಕಾಯಿ / ಕ್ಯಾಪ್ಸಿಕಂ', emoji: '🫑', categoryName: 'Exotic & Specialty', stockKg: 25, pricePerKg: 80 },
-    { name: 'Zucchini', nameHindi: 'ज़ुकीनी', nameKannada: 'ಜುಕಿನಿ', emoji: '🥒', categoryName: 'Exotic & Specialty', stockKg: 10, pricePerKg: 100 },
-    { name: 'Baby Corn', nameHindi: 'बेबी कॉर्न', nameKannada: 'ಬೇಬಿ ಕಾರ್ನ್', emoji: '🌽', categoryName: 'Exotic & Specialty', stockKg: 12, pricePerKg: 150, pricePerPacket: 40, packetWeight: 0.25 },
+    { name: 'Broccoli', nameHindi: 'ब्रोकोली', nameKannada: 'ಬ್ರೋಕಲಿ', emoji: '🥦', categoryName: 'Exotic & Specialty', stockKg: 15, pricePerKg: 120, pricePerPiece: 60, featured: true, originalPricePerKg: 160 },
+    { name: 'Capsicum', nameHindi: 'शिमला मिर्च', nameKannada: 'ದೆಳ್ಳುಮೆಣಸಿನಕಾಯಿ / ಕ್ಯಾಪ್ಸಿಕಂ', emoji: '🫑', categoryName: 'Exotic & Specialty', stockKg: 25, pricePerKg: 80, featured: true, originalPricePerKg: 110 },
+    { name: 'Zucchini', nameHindi: 'ज़ुकीनी', nameKannada: 'ಜುಕಿನಿ', emoji: '🥒', categoryName: 'Exotic & Specialty', stockKg: 10, pricePerKg: 100, originalPricePerKg: 140 },
+    { name: 'Baby Corn', nameHindi: 'बेबी कॉर्न', nameKannada: 'ಬೇಬಿ ಕಾರ್ನ್', emoji: '🌽', categoryName: 'Exotic & Specialty', stockKg: 12, pricePerKg: 150, pricePerPacket: 40, packetWeight: 0.25, featured: true, originalPricePerKg: 200 },
   ];
 
   const vegMap: Record<string, string> = {};
   for (const veg of vegetables) {
-    const { categoryName, stockKg, pricePerKg, pricePerPiece, pricePerPacket, pricePerBunch, packetWeight, ...vegData } = veg;
+    const { categoryName, stockKg, pricePerKg, pricePerPiece, pricePerPacket, pricePerBunch, packetWeight, featured, originalPricePerKg, ...vegData } = veg;
     const categoryId = categoryMap[categoryName];
 
     const existing = await prisma.vegetable.findFirst({
@@ -108,6 +108,7 @@ async function main() {
           ...vegData,
           categoryId,
           stockKg: stockKg ?? 0,
+          featured: featured ?? false,
           prices: {
             create: {
               pricePerKg: pricePerKg ?? undefined,
@@ -115,6 +116,7 @@ async function main() {
               pricePerPacket: pricePerPacket ?? undefined,
               pricePerBunch: pricePerBunch ?? undefined,
               packetWeight: packetWeight ?? undefined,
+              originalPricePerKg: originalPricePerKg ?? undefined,
             },
           },
         },
@@ -122,6 +124,10 @@ async function main() {
       vegMap[veg.name] = created.id;
     } else {
       vegMap[veg.name] = existing.id;
+      await prisma.vegetable.update({
+        where: { id: existing.id },
+        data: { featured: featured ?? false },
+      });
       const latestPrice = await prisma.price.findFirst({
         where: { vegetableId: existing.id },
         orderBy: { effectiveFrom: 'desc' },
@@ -133,6 +139,7 @@ async function main() {
             pricePerBunch: pricePerBunch ?? undefined,
             pricePerPacket: pricePerPacket ?? latestPrice.pricePerPacket ?? undefined,
             packetWeight: packetWeight ?? latestPrice.packetWeight ?? undefined,
+            originalPricePerKg: originalPricePerKg ?? undefined,
           },
         });
       }
@@ -210,8 +217,8 @@ async function main() {
   // Ravi Kumar handles Indiranagar + Koramangala + HSR (6 fridges)
   // Suresh Gowda handles Jayanagar + Whitefield + Malleshwaram (5 active fridges)
   const producerAssignments = [
-    { email: 'ravi@sampadagreen.com', fridges: ['Indiranagar - 12th Main', 'Indiranagar - CMH Road', 'Koramangala - 4th Block', 'Koramangala - 6th Block', 'HSR - Sector 1', 'HSR - Sector 7'] },
-    { email: 'suresh@sampadagreen.com', fridges: ['Jayanagar - 4th Block', 'Whitefield - ITPL Gate', 'Whitefield - Varthur Road', 'Malleshwaram - 8th Cross', 'Malleshwaram - Margosa Road'] },
+    { email: 'ravi@sampadagreen.com', fridges: ['Indiranagar - 12th Main', 'Indiranagar - CMH Road', 'Koramangala - 4th Block', 'Koramangala - 6th Block', 'HSR - Sector 1', 'HSR - Sector 7', 'JP Nagar - 6th Phase', 'Basavanagudi - Gandhi Bazaar', 'Basavanagudi - DVG Road', 'E-City - Phase 1'] },
+    { email: 'suresh@sampadagreen.com', fridges: ['Jayanagar - 4th Block', 'Whitefield - ITPL Gate', 'Whitefield - Varthur Road', 'Malleshwaram - 8th Cross', 'Malleshwaram - Margosa Road', 'Yelahanka - New Town', 'Yelahanka - Sahakara Nagar', 'E-City - Phase 2'] },
   ];
 
   const existingAssignments = await prisma.producerFridgeAssignment.count();
@@ -441,38 +448,87 @@ async function main() {
 
   // ─── 9. Customers (Bangalore residents) ─────────────────────────
   const customers = [
-    { phone: '9900100001', name: 'Priya Sharma', address: '42, 12th Main, Indiranagar, Bengaluru' },
-    { phone: '9900100002', name: 'Arun Kumar', address: '15, 80 Feet Road, Koramangala, Bengaluru' },
-    { phone: '9900100003', name: 'Lakshmi Devi', address: '88, HSR Layout Sector 2, Bengaluru' },
-    { phone: '9900100004', name: 'Rajesh Gowda', address: '23, Jayanagar 3rd Block, Bengaluru' },
-    { phone: '9900100005', name: 'Sneha Patil', address: '67, Whitefield Main Road, Bengaluru' },
-    { phone: '9900100006', name: 'Kiran Hegde', address: '11, Sampige Road, Malleshwaram, Bengaluru' },
-    { phone: '9900100007', name: 'Deepa Rao', address: '34, JP Nagar 5th Phase, Bengaluru' },
-    { phone: '9900100008', name: 'Mohan Reddy', address: '9, Yelahanka New Town, Bengaluru' },
-    { phone: '9900100009', name: 'Asha Bhat', address: '56, Gandhi Bazaar, Basavanagudi, Bengaluru' },
-    { phone: '9900100010', name: 'Vinay Shetty', address: '78, Electronic City Phase 1, Bengaluru' },
-    { phone: '9900100011', name: 'Kavitha Nair', address: '19, CMH Road, Indiranagar, Bengaluru' },
-    { phone: '9900100012', name: 'Sunil Joshi', address: '45, 5th Block, Koramangala, Bengaluru' },
-    { phone: '9900100013', name: 'Meena Kulkarni', address: '71, Sector 3, HSR Layout, Bengaluru' },
-    { phone: '9900100014', name: 'Ganesh Iyengar', address: '28, 11th Main, Jayanagar, Bengaluru' },
-    { phone: '9900100015', name: 'Anitha Murthy', address: '63, Margosa Road, Malleshwaram, Bengaluru' },
-    { phone: '9900100016', name: 'Ramesh Naik', address: '5, 15th Cross, JP Nagar, Bengaluru' },
-    { phone: '9900100017', name: 'Shilpa Desai', address: '91, DVG Road, Basavanagudi, Bengaluru' },
-    { phone: '9900100018', name: 'Harish Acharya', address: '17, Sahakara Nagar, Yelahanka, Bengaluru' },
-    { phone: '9900100019', name: 'Divya Hegde', address: '82, Varthur Road, Whitefield, Bengaluru' },
-    { phone: '9900100020', name: 'Naveen Prasad', address: '36, Phase 2, Electronic City, Bengaluru' },
+    { phone: '9900100001', name: 'Priya Sharma', whatsapp: '9900100001', address: '42, 12th Main, Indiranagar, Bengaluru' },
+    { phone: '9900100002', name: 'Arun Kumar', whatsapp: '9900100002', address: '15, 80 Feet Road, Koramangala, Bengaluru' },
+    { phone: '9900100003', name: 'Lakshmi Devi', whatsapp: '9900100003', address: '88, HSR Layout Sector 2, Bengaluru' },
+    { phone: '9900100004', name: 'Rajesh Gowda', whatsapp: '9900100004', address: '23, Jayanagar 3rd Block, Bengaluru' },
+    { phone: '9900100005', name: 'Sneha Patil', whatsapp: '9900100005', address: '67, Whitefield Main Road, Bengaluru' },
+    { phone: '9900100006', name: 'Kiran Hegde', whatsapp: '9900100006', address: '11, Sampige Road, Malleshwaram, Bengaluru' },
+    { phone: '9900100007', name: 'Deepa Rao', whatsapp: '9900100007', address: '34, JP Nagar 5th Phase, Bengaluru' },
+    { phone: '9900100008', name: 'Mohan Reddy', whatsapp: '9900100008', address: '9, Yelahanka New Town, Bengaluru' },
+    { phone: '9900100009', name: 'Asha Bhat', whatsapp: '9900100009', address: '56, Gandhi Bazaar, Basavanagudi, Bengaluru' },
+    { phone: '9900100010', name: 'Vinay Shetty', whatsapp: '9900100010', address: '78, Electronic City Phase 1, Bengaluru' },
+    { phone: '9900100011', name: 'Kavitha Nair', whatsapp: '9900100011', address: '19, CMH Road, Indiranagar, Bengaluru' },
+    { phone: '9900100012', name: 'Sunil Joshi', whatsapp: '9900100012', address: '45, 5th Block, Koramangala, Bengaluru' },
+    { phone: '9900100013', name: 'Meena Kulkarni', whatsapp: '9900100013', address: '71, Sector 3, HSR Layout, Bengaluru' },
+    { phone: '9900100014', name: 'Ganesh Iyengar', whatsapp: '9900100014', address: '28, 11th Main, Jayanagar, Bengaluru' },
+    { phone: '9900100015', name: 'Anitha Murthy', whatsapp: '9900100015', address: '63, Margosa Road, Malleshwaram, Bengaluru' },
+    { phone: '9900100016', name: 'Ramesh Naik', whatsapp: '9900100016', address: '5, 15th Cross, JP Nagar, Bengaluru' },
+    { phone: '9900100017', name: 'Shilpa Desai', whatsapp: '9900100017', address: '91, DVG Road, Basavanagudi, Bengaluru' },
+    { phone: '9900100018', name: 'Harish Acharya', whatsapp: '9900100018', address: '17, Sahakara Nagar, Yelahanka, Bengaluru' },
+    { phone: '9900100019', name: 'Divya Hegde', whatsapp: '9900100019', address: '82, Varthur Road, Whitefield, Bengaluru' },
+    { phone: '9900100020', name: 'Naveen Prasad', whatsapp: '9900100020', address: '36, Phase 2, Electronic City, Bengaluru' },
   ];
 
   const customerMap: Record<string, string> = {};
   for (const c of customers) {
     const created = await prisma.customer.upsert({
       where: { phone: c.phone },
-      update: { name: c.name, address: c.address },
+      update: { name: c.name, whatsapp: c.whatsapp, address: c.address },
       create: c,
     });
     customerMap[c.phone] = created.id;
   }
   console.log('20 customers seeded');
+
+  // ─── 9b. Customer Addresses ───────────────────────────────────────
+  const addressDefs = [
+    { phone: '9900100001', label: 'Home', text: '42, 12th Main, Indiranagar, Bengaluru 560038', isDefault: true },
+    { phone: '9900100001', label: 'Office', text: '3rd Floor, Embassy Tech Village, Outer Ring Road, Bengaluru 560103', isDefault: false },
+    { phone: '9900100002', label: 'Home', text: '15, 80 Feet Road, Koramangala 4th Block, Bengaluru 560034', isDefault: true },
+    { phone: '9900100003', label: 'Home', text: '88, Sector 2, HSR Layout, Bengaluru 560102', isDefault: true },
+    { phone: '9900100004', label: 'Home', text: '23, 3rd Block, Jayanagar, Bengaluru 560011', isDefault: true },
+    { phone: '9900100005', label: 'Home', text: '67, Whitefield Main Road, Bengaluru 560066', isDefault: true },
+    { phone: '9900100006', label: 'Home', text: '11, Sampige Road, Malleshwaram, Bengaluru 560003', isDefault: true },
+    { phone: '9900100007', label: 'Home', text: '34, 5th Phase, JP Nagar, Bengaluru 560078', isDefault: true },
+    { phone: '9900100008', label: 'Home', text: '9, New Town, Yelahanka, Bengaluru 560064', isDefault: true },
+    { phone: '9900100009', label: 'Home', text: '56, Gandhi Bazaar, Basavanagudi, Bengaluru 560004', isDefault: true },
+    { phone: '9900100010', label: 'Home', text: '78, Phase 1, Electronic City, Bengaluru 560100', isDefault: true },
+    { phone: '9900100011', label: 'Home', text: '19, CMH Road, Indiranagar, Bengaluru 560038', isDefault: true },
+    { phone: '9900100012', label: 'Home', text: '45, 5th Block, Koramangala, Bengaluru 560034', isDefault: true },
+    { phone: '9900100013', label: 'Home', text: '71, Sector 3, HSR Layout, Bengaluru 560102', isDefault: true },
+    { phone: '9900100014', label: 'Home', text: '28, 11th Main, Jayanagar, Bengaluru 560011', isDefault: true },
+    { phone: '9900100015', label: 'Home', text: '63, Margosa Road, Malleshwaram, Bengaluru 560003', isDefault: true },
+    { phone: '9900100016', label: 'Home', text: '5, 15th Cross, JP Nagar, Bengaluru 560078', isDefault: true },
+    { phone: '9900100017', label: 'Home', text: '91, DVG Road, Basavanagudi, Bengaluru 560004', isDefault: true },
+    { phone: '9900100018', label: 'Home', text: '17, Sahakara Nagar, Yelahanka, Bengaluru 560064', isDefault: true },
+    { phone: '9900100019', label: 'Home', text: '82, Varthur Road, Whitefield, Bengaluru 560066', isDefault: true },
+    { phone: '9900100020', label: 'Home', text: '36, Phase 2, Electronic City, Bengaluru 560100', isDefault: true },
+  ];
+
+  const addressMap: Record<string, string> = {}; // phone -> default address id
+  const existingAddresses = await prisma.address.count();
+  if (existingAddresses === 0) {
+    for (const aDef of addressDefs) {
+      const customerId = customerMap[aDef.phone];
+      if (!customerId) continue;
+      const created = await prisma.address.create({
+        data: { customerId, label: aDef.label, text: aDef.text, isDefault: aDef.isDefault },
+      });
+      if (aDef.isDefault) {
+        addressMap[aDef.phone] = created.id;
+      }
+    }
+    console.log('Customer addresses seeded');
+  } else {
+    // Load existing default addresses
+    for (const c of customers) {
+      const addr = await prisma.address.findFirst({
+        where: { customerId: customerMap[c.phone], isDefault: true },
+      });
+      if (addr) addressMap[c.phone] = addr.id;
+    }
+  }
 
   // ─── 10. Fridge Pickup Orders ───────────────────────────────────
   async function getVegPrice(vegetableId: string) {
@@ -503,15 +559,17 @@ async function main() {
     // Orders with diverse statuses — including today's CONFIRMED/READY
     const orderDefs: {
       customerPhone: string;
-      fridgeName: string;
+      fridgeName?: string;
+      orderType?: 'FRIDGE_PICKUP' | 'HOME_DELIVERY';
       daysBack: number;
       hoursBack?: number; // for today's recent orders
-      status: 'PENDING' | 'CONFIRMED' | 'READY' | 'PICKED_UP' | 'CANCELLED';
+      status: 'PENDING' | 'CONFIRMED' | 'READY' | 'PICKED_UP' | 'DELIVERED' | 'CANCELLED';
       paymentStatus: 'UNPAID' | 'PAID' | 'PARTIAL';
       assignedToId?: string;
       confirmedAt?: Date;
       readyAt?: Date;
       pickedUpAt?: Date;
+      deliveredAt?: Date;
       items: { vegName: string; qty: number; unit: 'KG' | 'GRAM' | 'PIECE' | 'BUNCH' | 'PACKET' }[];
     }[] = [
       // ─── TODAY: Mix of all statuses ────────────────────────
@@ -623,12 +681,70 @@ async function main() {
       { customerPhone: '9900100005', fridgeName: 'Whitefield - ITPL Gate', daysBack: 14, status: 'PICKED_UP', paymentStatus: 'PAID',
         assignedToId: sureshId,
         items: [{ vegName: 'Tomato', qty: 2, unit: 'KG' }, { vegName: 'Potato', qty: 2, unit: 'KG' }, { vegName: 'Carrot', qty: 1, unit: 'KG' }, { vegName: 'Onion', qty: 1, unit: 'KG' }] },
+
+      // ─── HOME DELIVERY ORDERS ─────────────────────────────────
+      // Today: PENDING deliveries (need procurement!)
+      { customerPhone: '9900100007', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 1.5, status: 'PENDING', paymentStatus: 'UNPAID',
+        items: [{ vegName: 'Potato', qty: 3, unit: 'KG' }, { vegName: 'Onion', qty: 2, unit: 'KG' }, { vegName: 'Tomato', qty: 2, unit: 'KG' }, { vegName: 'Green Chili', qty: 1, unit: 'PACKET' }] },
+      { customerPhone: '9900100013', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 0.8, status: 'PENDING', paymentStatus: 'UNPAID',
+        items: [{ vegName: 'Broccoli', qty: 2, unit: 'PIECE' }, { vegName: 'Capsicum', qty: 1, unit: 'KG' }, { vegName: 'Baby Corn', qty: 1, unit: 'PACKET' }] },
+      { customerPhone: '9900100001', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 0.5, status: 'PENDING', paymentStatus: 'UNPAID',
+        items: [{ vegName: 'Spinach', qty: 3, unit: 'BUNCH' }, { vegName: 'Coriander', qty: 2, unit: 'BUNCH' }, { vegName: 'Potato', qty: 2, unit: 'KG' }, { vegName: 'Tomato', qty: 1, unit: 'KG' }] },
+      { customerPhone: '9900100011', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 0.3, status: 'PENDING', paymentStatus: 'UNPAID',
+        items: [{ vegName: 'Carrot', qty: 2, unit: 'KG' }, { vegName: 'Beetroot', qty: 1, unit: 'KG' }, { vegName: 'Cucumber', qty: 2, unit: 'KG' }, { vegName: 'Ginger', qty: 250, unit: 'GRAM' }, { vegName: 'Garlic', qty: 500, unit: 'GRAM' }] },
+      { customerPhone: '9900100018', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 0.2, status: 'PENDING', paymentStatus: 'UNPAID',
+        items: [{ vegName: 'Lady Finger', qty: 1, unit: 'KG' }, { vegName: 'Brinjal', qty: 1, unit: 'KG' }, { vegName: 'Drumstick', qty: 6, unit: 'PIECE' }, { vegName: 'Green Chili', qty: 1, unit: 'PACKET' }] },
+      // Today: CONFIRMED deliveries (being packed)
+      { customerPhone: '9900100008', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 3, status: 'CONFIRMED', paymentStatus: 'UNPAID',
+        assignedToId: raviId, confirmedAt: hoursAgo(2),
+        items: [{ vegName: 'Spinach', qty: 2, unit: 'BUNCH' }, { vegName: 'Fenugreek', qty: 1, unit: 'BUNCH' }, { vegName: 'Coriander', qty: 2, unit: 'BUNCH' }, { vegName: 'Carrot', qty: 1, unit: 'KG' }] },
+      { customerPhone: '9900100002', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 2.5, status: 'CONFIRMED', paymentStatus: 'UNPAID',
+        assignedToId: raviId, confirmedAt: hoursAgo(2),
+        items: [{ vegName: 'Potato', qty: 5, unit: 'KG' }, { vegName: 'Onion', qty: 3, unit: 'KG' }, { vegName: 'Tomato', qty: 3, unit: 'KG' }, { vegName: 'Garlic', qty: 250, unit: 'GRAM' }] },
+      { customerPhone: '9900100009', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 2, status: 'CONFIRMED', paymentStatus: 'UNPAID',
+        assignedToId: sureshId, confirmedAt: hoursAgo(1.5),
+        items: [{ vegName: 'French Beans', qty: 1, unit: 'PACKET' }, { vegName: 'Green Peas', qty: 2, unit: 'PACKET' }, { vegName: 'Capsicum', qty: 500, unit: 'GRAM' }] },
+      // Today: READY for transporter
+      { customerPhone: '9900100006', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 4, status: 'READY', paymentStatus: 'UNPAID',
+        assignedToId: raviId, confirmedAt: hoursAgo(3.5), readyAt: hoursAgo(2.5),
+        items: [{ vegName: 'Tomato', qty: 2, unit: 'KG' }, { vegName: 'Cucumber', qty: 1, unit: 'KG' }, { vegName: 'Curry Leaves', qty: 2, unit: 'BUNCH' }] },
+      // Today: delivered
+      { customerPhone: '9900100016', orderType: 'HOME_DELIVERY', daysBack: 0, hoursBack: 5, status: 'DELIVERED', paymentStatus: 'PAID',
+        assignedToId: raviId, confirmedAt: hoursAgo(4.5), readyAt: hoursAgo(4), pickedUpAt: hoursAgo(3), deliveredAt: hoursAgo(2),
+        items: [{ vegName: 'Potato', qty: 5, unit: 'KG' }, { vegName: 'Onion', qty: 3, unit: 'KG' }, { vegName: 'Tomato', qty: 2, unit: 'KG' }] },
+      // Yesterday: delivered
+      { customerPhone: '9900100017', orderType: 'HOME_DELIVERY', daysBack: 1, status: 'DELIVERED', paymentStatus: 'PAID',
+        assignedToId: sureshId, confirmedAt: daysAgo(1), readyAt: daysAgo(1), pickedUpAt: daysAgo(1), deliveredAt: daysAgo(1),
+        items: [{ vegName: 'Ginger', qty: 500, unit: 'GRAM' }, { vegName: 'Garlic', qty: 500, unit: 'GRAM' }, { vegName: 'Cucumber', qty: 2, unit: 'KG' }, { vegName: 'Lady Finger', qty: 1, unit: 'KG' }] },
+      { customerPhone: '9900100019', orderType: 'HOME_DELIVERY', daysBack: 1, status: 'DELIVERED', paymentStatus: 'PAID',
+        assignedToId: sureshId, confirmedAt: daysAgo(1), readyAt: daysAgo(1), pickedUpAt: daysAgo(1), deliveredAt: daysAgo(1),
+        items: [{ vegName: 'Beetroot', qty: 1, unit: 'KG' }, { vegName: 'Radish', qty: 3, unit: 'PIECE' }, { vegName: 'Carrot', qty: 2, unit: 'KG' }] },
+      { customerPhone: '9900100004', orderType: 'HOME_DELIVERY', daysBack: 1, status: 'DELIVERED', paymentStatus: 'PAID',
+        assignedToId: raviId, confirmedAt: daysAgo(1), readyAt: daysAgo(1), pickedUpAt: daysAgo(1), deliveredAt: daysAgo(1),
+        items: [{ vegName: 'Bitter Gourd', qty: 500, unit: 'GRAM' }, { vegName: 'Bottle Gourd', qty: 1, unit: 'PIECE' }, { vegName: 'Pumpkin', qty: 1, unit: 'KG' }] },
+      // 2 days ago: delivered
+      { customerPhone: '9900100020', orderType: 'HOME_DELIVERY', daysBack: 2, status: 'DELIVERED', paymentStatus: 'PAID',
+        items: [{ vegName: 'Drumstick', qty: 4, unit: 'PIECE' }, { vegName: 'Brinjal', qty: 1, unit: 'KG' }, { vegName: 'Bitter Gourd', qty: 500, unit: 'GRAM' }] },
+      { customerPhone: '9900100012', orderType: 'HOME_DELIVERY', daysBack: 2, status: 'DELIVERED', paymentStatus: 'PAID',
+        assignedToId: raviId,
+        items: [{ vegName: 'Mustard Greens', qty: 2, unit: 'BUNCH' }, { vegName: 'Amaranth Leaves', qty: 1, unit: 'BUNCH' }, { vegName: 'Spinach', qty: 2, unit: 'BUNCH' }] },
+      // 3 days ago: cancelled delivery
+      { customerPhone: '9900100015', orderType: 'HOME_DELIVERY', daysBack: 3, status: 'CANCELLED', paymentStatus: 'UNPAID',
+        items: [{ vegName: 'Pumpkin', qty: 2, unit: 'KG' }, { vegName: 'Ash Gourd', qty: 1, unit: 'PIECE' }] },
+      // 5 days ago: delivered
+      { customerPhone: '9900100003', orderType: 'HOME_DELIVERY', daysBack: 5, status: 'DELIVERED', paymentStatus: 'PAID',
+        assignedToId: raviId, items: [{ vegName: 'French Beans', qty: 1, unit: 'PACKET' }, { vegName: 'Green Peas', qty: 1, unit: 'PACKET' }, { vegName: 'Cluster Beans', qty: 500, unit: 'GRAM' }] },
+      // 7 days ago: delivered with partial payment
+      { customerPhone: '9900100014', orderType: 'HOME_DELIVERY', daysBack: 7, status: 'DELIVERED', paymentStatus: 'PARTIAL',
+        assignedToId: sureshId, items: [{ vegName: 'Bottle Gourd', qty: 1, unit: 'PIECE' }, { vegName: 'Ridge Gourd', qty: 1, unit: 'KG' }, { vegName: 'Broad Beans', qty: 500, unit: 'GRAM' }] },
     ];
 
     let orderSeq = 1;
     for (const def of orderDefs) {
       const customerId = customerMap[def.customerPhone];
-      const refrigeratorId = fridgeMap[def.fridgeName];
+      const orderType = def.orderType || 'FRIDGE_PICKUP';
+      const refrigeratorId = def.fridgeName ? fridgeMap[def.fridgeName] : null;
+      const customerAddressId = orderType === 'HOME_DELIVERY' ? (addressMap[def.customerPhone] || null) : null;
 
       let createdAt: Date;
       if (def.hoursBack !== undefined) {
@@ -638,7 +754,8 @@ async function main() {
       }
 
       const dateStr = createdAt.toISOString().slice(0, 10).replace(/-/g, '');
-      const orderNumber = `FP-${dateStr}-${orderSeq.toString().padStart(3, '0')}`;
+      const prefix = orderType === 'HOME_DELIVERY' ? 'HD' : 'FP';
+      const orderNumber = `${prefix}-${dateStr}-${orderSeq.toString().padStart(3, '0')}`;
       orderSeq++;
 
       // Build items with prices
@@ -689,7 +806,9 @@ async function main() {
         data: {
           orderNumber,
           customerId,
-          refrigeratorId,
+          orderType,
+          refrigeratorId: orderType === 'FRIDGE_PICKUP' ? refrigeratorId : null,
+          addressId: orderType === 'HOME_DELIVERY' ? customerAddressId : null,
           status: def.status,
           totalAmount,
           paidAmount,
@@ -698,6 +817,7 @@ async function main() {
           confirmedAt: def.confirmedAt ?? null,
           readyAt: def.readyAt ?? null,
           pickedUpAt: def.pickedUpAt ?? null,
+          deliveredAt: def.deliveredAt ?? null,
           cancelledAt: def.status === 'CANCELLED' ? createdAt : null,
           createdAt,
           items: {

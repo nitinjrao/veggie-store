@@ -7,12 +7,10 @@
     @apply bg-bg-light text-text-dark font-sans antialiased;
   }
 
-  /* Smooth scroll */
   html {
     scroll-behavior: smooth;
   }
 
-  /* Better focus styles */
   *:focus-visible {
     @apply outline-none ring-2 ring-primary-green ring-offset-2;
   }
@@ -30,16 +28,16 @@
 
   /* Shimmer loading effect */
   .shimmer {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background: linear-gradient(90deg, #edeee9 25%, #e2e3de 50%, #edeee9 75%);
     background-size: 200% 100%;
     animation: shimmer 2s linear infinite;
   }
 
   /* Glass effect */
   .glass {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px) saturate(1.8);
+    -webkit-backdrop-filter: blur(16px) saturate(1.8);
+    background: rgba(246, 247, 244, 0.82);
   }
 
   /* Staggered children animation */
@@ -47,17 +45,83 @@
     animation: fadeInUp 0.4s ease-out both;
   }
   .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-  .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-  .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-  .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-  .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
-  .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
-  .stagger-children > *:nth-child(7) { animation-delay: 300ms; }
-  .stagger-children > *:nth-child(8) { animation-delay: 350ms; }
-  .stagger-children > *:nth-child(9) { animation-delay: 400ms; }
-  .stagger-children > *:nth-child(10) { animation-delay: 450ms; }
-  .stagger-children > *:nth-child(11) { animation-delay: 500ms; }
-  .stagger-children > *:nth-child(12) { animation-delay: 550ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(7) { animation-delay: 240ms; }
+  .stagger-children > *:nth-child(8) { animation-delay: 280ms; }
+  .stagger-children > *:nth-child(9) { animation-delay: 320ms; }
+  .stagger-children > *:nth-child(10) { animation-delay: 360ms; }
+  .stagger-children > *:nth-child(11) { animation-delay: 400ms; }
+  .stagger-children > *:nth-child(12) { animation-delay: 440ms; }
+  .stagger-children > *:nth-child(n+13) { animation-delay: 480ms; }
+
+  /* ─── Deals Section ─────────────────────────────────────── */
+  .deals-section {
+    text-align: center;
+    padding: 1rem 0 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .deals-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  @media (min-width: 640px) {
+    .deals-grid {
+      gap: 16px;
+    }
+  }
+
+  .deal-card {
+    width: 140px;
+    background: white;
+    border-radius: 14px;
+    padding: 14px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  @media (min-width: 640px) {
+    .deal-card {
+      width: 152px;
+      padding: 16px 12px 12px;
+    }
+  }
+  .deal-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+    transform: translateY(-1px);
+  }
+
+  .deal-add-btn {
+    width: 100%;
+    padding: 6px 0;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #16a34a;
+    border: 1.5px solid #bbf7d0;
+    background: #f0fdf4;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .deal-add-btn:hover {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    border-color: transparent;
+  }
+  .deal-add-btn:active {
+    transform: scale(0.97);
+  }
 }
 
 @layer utilities {

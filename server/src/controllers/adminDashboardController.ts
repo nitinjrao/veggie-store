@@ -27,6 +27,8 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
     unassignedFridges,
     totalRevenue,
     pickedUpToday,
+    transporterActivity,
+    unassignedReadyOrders,
   ] = await Promise.all([
     // Existing counts
     prisma.vegetable.count({ where: { available: true } }),
@@ -161,6 +163,37 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
         pickedUpAt: { gte: today },
       },
     }),
+
+    // Transporter activity
+    prisma.staffUser.findMany({
+      where: { active: true, role: 'TRANSPORTER' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        assignedFridgeOrders: {
+          where: {
+            pickedUpAt: { gte: today },
+          },
+          select: {
+            status: true,
+            pickedUpAt: true,
+          },
+        },
+      },
+    }),
+
+    // Unassigned ready orders (READY with no transporter assigned)
+    prisma.fridgePickupOrder.count({
+      where: {
+        status: 'READY',
+        OR: [
+          { assignedToId: null },
+          { assignedTo: { role: 'PRODUCER' } },
+        ],
+      },
+    }),
   ]);
 
   // Process fridge health data
@@ -222,6 +255,20 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
     };
   });
 
+  // Process transporter activity
+  const transporterActivityData = transporterActivity.map((staff) => {
+    const pickupsToday = staff.assignedFridgeOrders.filter(
+      (o) => o.pickedUpAt && new Date(o.pickedUpAt) >= today
+    ).length;
+
+    return {
+      id: staff.id,
+      name: staff.name,
+      role: staff.role,
+      pickupsToday,
+    };
+  });
+
   // Build attention items
   const attentionItems: { type: string; message: string; severity: 'critical' | 'warning' }[] = [];
 
@@ -259,6 +306,14 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
     });
   }
 
+  if (unassignedReadyOrders > 0) {
+    attentionItems.push({
+      type: 'unassigned_ready_orders',
+      message: `${unassignedReadyOrders} ready order${unassignedReadyOrders > 1 ? 's' : ''} without a transporter`,
+      severity: 'warning',
+    });
+  }
+
   res.json({
     totalVegetables,
     totalCategories,
@@ -282,6 +337,7 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
     recentOrders,
     fridgeHealth,
     staffActivity: staffActivityData,
+    transporterActivity: transporterActivityData,
     attentionItems,
   });
 };

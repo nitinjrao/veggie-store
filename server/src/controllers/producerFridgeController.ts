@@ -226,6 +226,7 @@ export const getOrderSummary = async (req: Request, res: Response) => {
     countsByFridge[fridgeId] = { pending: 0, confirmed: 0, ready: 0 };
   }
   for (const group of groups) {
+    if (!group.refrigeratorId) continue;
     const statusKey = group.status.toLowerCase() as 'pending' | 'confirmed' | 'ready';
     countsByFridge[group.refrigeratorId][statusKey] = group._count.id;
   }
@@ -280,6 +281,115 @@ export const getPendingOrders = async (req: Request, res: Response) => {
   res.json(orders);
 };
 
+// ─── All Orders: all orders for assigned fridges + home delivery ─────
+
+export const getAllOrders = async (req: Request, res: Response) => {
+  const status = req.query.status as string | undefined;
+
+  // Show all orders — producer needs visibility into everything
+  const where: Record<string, unknown> = {};
+
+  if (status && status !== 'ALL') {
+    where.status = status;
+  }
+
+  const orders = await prisma.fridgePickupOrder.findMany({
+    where,
+    include: {
+      customer: { select: { id: true, name: true, phone: true } },
+      items: {
+        include: {
+          vegetable: { select: { id: true, name: true, emoji: true } },
+        },
+      },
+      refrigerator: {
+        include: {
+          location: { select: { id: true, name: true, address: true } },
+        },
+      },
+      address: { select: { id: true, label: true, text: true } },
+      assignedTo: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+  });
+
+  res.json(orders);
+};
+
+// ─── Procurement View: cumulative vegs from HOME_DELIVERY PENDING + CONFIRMED ─
+
+export const getProcurementView = async (_req: Request, res: Response) => {
+
+  // Only HOME_DELIVERY orders need procurement — fridge stock is pre-filled weekly
+  const orders = await prisma.fridgePickupOrder.findMany({
+    where: {
+      orderType: 'HOME_DELIVERY',
+      status: { in: ['PENDING', 'CONFIRMED'] },
+    },
+    include: {
+      items: {
+        where: { isRemoved: false },
+        include: {
+          vegetable: { select: { id: true, name: true, emoji: true } },
+        },
+      },
+    },
+  });
+
+  const aggregateMap = new Map<
+    string,
+    {
+      vegetable: { id: string; name: string; emoji: string | null };
+      unit: string;
+      totalQuantity: Decimal;
+      orderCount: number;
+      pendingQty: Decimal;
+      confirmedQty: Decimal;
+    }
+  >();
+
+  for (const order of orders) {
+    for (const item of order.items) {
+      const key = `${item.vegetableId}:${item.unit}`;
+      const existing = aggregateMap.get(key);
+      if (existing) {
+        existing.totalQuantity = existing.totalQuantity.add(item.quantity);
+        existing.orderCount += 1;
+        if (order.status === 'PENDING') {
+          existing.pendingQty = existing.pendingQty.add(item.quantity);
+        } else {
+          existing.confirmedQty = existing.confirmedQty.add(item.quantity);
+        }
+      } else {
+        aggregateMap.set(key, {
+          vegetable: {
+            id: item.vegetable.id,
+            name: item.vegetable.name,
+            emoji: item.vegetable.emoji,
+          },
+          unit: item.unit,
+          totalQuantity: item.quantity,
+          orderCount: 1,
+          pendingQty: order.status === 'PENDING' ? item.quantity : new Decimal(0),
+          confirmedQty: order.status === 'CONFIRMED' ? item.quantity : new Decimal(0),
+        });
+      }
+    }
+  }
+
+  const result = Array.from(aggregateMap.values())
+    .map((r) => ({
+      ...r,
+      totalQuantity: r.totalQuantity.toNumber(),
+      pendingQty: r.pendingQty.toNumber(),
+      confirmedQty: r.confirmedQty.toNumber(),
+    }))
+    .sort((a, b) => b.totalQuantity - a.totalQuantity);
+
+  res.json(result);
+};
+
 // ─── Confirm Order: PENDING → CONFIRMED ─────────────────────────────
 
 export const confirmOrder = async (req: Request, res: Response) => {
@@ -299,18 +409,20 @@ export const confirmOrder = async (req: Request, res: Response) => {
     throw new ApiError(400, `Cannot confirm order: current status is ${order.status}`);
   }
 
-  // Validate producer is assigned to this fridge
-  const assignment = await prisma.producerFridgeAssignment.findUnique({
-    where: {
-      staffUserId_refrigeratorId: {
-        staffUserId: user.id,
-        refrigeratorId: order.refrigeratorId,
+  // For FRIDGE_PICKUP orders, validate producer is assigned to the fridge
+  if (order.refrigeratorId) {
+    const assignment = await prisma.producerFridgeAssignment.findUnique({
+      where: {
+        staffUserId_refrigeratorId: {
+          staffUserId: user.id,
+          refrigeratorId: order.refrigeratorId,
+        },
       },
-    },
-  });
+    });
 
-  if (!assignment) {
-    throw new ApiError(403, 'You are not assigned to this fridge');
+    if (!assignment) {
+      throw new ApiError(403, 'You are not assigned to this fridge');
+    }
   }
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -386,18 +498,20 @@ export const markOrderReady = async (req: Request, res: Response) => {
     throw new ApiError(400, `Cannot mark order as ready: current status is ${order.status}`);
   }
 
-  // Validate producer is assigned to this fridge
-  const assignment = await prisma.producerFridgeAssignment.findUnique({
-    where: {
-      staffUserId_refrigeratorId: {
-        staffUserId: user.id,
-        refrigeratorId: order.refrigeratorId,
+  // For FRIDGE_PICKUP orders, validate producer is assigned to the fridge
+  if (order.refrigeratorId) {
+    const assignment = await prisma.producerFridgeAssignment.findUnique({
+      where: {
+        staffUserId_refrigeratorId: {
+          staffUserId: user.id,
+          refrigeratorId: order.refrigeratorId,
+        },
       },
-    },
-  });
+    });
 
-  if (!assignment) {
-    throw new ApiError(403, 'You are not assigned to this fridge');
+    if (!assignment) {
+      throw new ApiError(403, 'You are not assigned to this fridge');
+    }
   }
 
   const updated = await prisma.fridgePickupOrder.update({
@@ -423,4 +537,140 @@ export const markOrderReady = async (req: Request, res: Response) => {
   });
 
   res.json(updated);
+};
+
+// ─── Cumulative packing view ─────────────────────────────────────────
+
+const WEIGHT_CLASS_SORT: Record<string, number> = {
+  HEAVY: 1,
+  MEDIUM: 2,
+  LIGHT: 3,
+  DELICATE: 4,
+};
+
+export const getCumulativeView = async (req: Request, res: Response) => {
+  const user = getAuthUser(req);
+
+  // Get assigned fridge IDs
+  const assignments = await prisma.producerFridgeAssignment.findMany({
+    where: { staffUserId: user.id },
+    select: { refrigeratorId: true },
+  });
+
+  const assignedFridgeIds = assignments.map((a) => a.refrigeratorId);
+
+  // Get all CONFIRMED order items for assigned fridges
+  const orders = await prisma.fridgePickupOrder.findMany({
+    where: {
+      refrigeratorId: { in: assignedFridgeIds },
+      status: 'CONFIRMED',
+    },
+    include: {
+      items: {
+        where: { isRemoved: false },
+        include: {
+          vegetable: {
+            include: {
+              category: { select: { id: true, name: true, weightClass: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Aggregate by vegetable + unit
+  const aggregateMap = new Map<
+    string,
+    {
+      vegetable: { id: string; name: string; emoji: string | null; category: { id: string; name: string; weightClass: string } };
+      unit: string;
+      totalQuantity: Decimal;
+      orderCount: number;
+    }
+  >();
+
+  for (const order of orders) {
+    for (const item of order.items) {
+      const key = `${item.vegetableId}:${item.unit}`;
+      const existing = aggregateMap.get(key);
+      if (existing) {
+        existing.totalQuantity = existing.totalQuantity.add(item.quantity);
+        existing.orderCount += 1;
+      } else {
+        aggregateMap.set(key, {
+          vegetable: {
+            id: item.vegetable.id,
+            name: item.vegetable.name,
+            emoji: item.vegetable.emoji,
+            category: item.vegetable.category,
+          },
+          unit: item.unit,
+          totalQuantity: item.quantity,
+          orderCount: 1,
+        });
+      }
+    }
+  }
+
+  // Sort by weight class (HEAVY first)
+  const result = Array.from(aggregateMap.values()).sort((a, b) => {
+    const sortA = WEIGHT_CLASS_SORT[a.vegetable.category.weightClass] ?? 99;
+    const sortB = WEIGHT_CLASS_SORT[b.vegetable.category.weightClass] ?? 99;
+    return sortA - sortB;
+  });
+
+  res.json(result);
+};
+
+// ─── Assembly view (per-order with packing sequence) ─────────────────
+
+export const getAssemblyView = async (req: Request, res: Response) => {
+  const user = getAuthUser(req);
+
+  // Get assigned fridge IDs
+  const assignments = await prisma.producerFridgeAssignment.findMany({
+    where: { staffUserId: user.id },
+    select: { refrigeratorId: true },
+  });
+
+  const assignedFridgeIds = assignments.map((a) => a.refrigeratorId);
+
+  const orders = await prisma.fridgePickupOrder.findMany({
+    where: {
+      refrigeratorId: { in: assignedFridgeIds },
+      status: 'CONFIRMED',
+    },
+    include: {
+      customer: { select: { id: true, name: true, phone: true } },
+      items: {
+        where: { isRemoved: false },
+        include: {
+          vegetable: {
+            include: {
+              category: { select: { id: true, name: true, weightClass: true } },
+            },
+          },
+        },
+      },
+      refrigerator: {
+        include: {
+          location: { select: { id: true, name: true, address: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // Sort items within each order by packing sequence (HEAVY first)
+  const result = orders.map((order) => ({
+    ...order,
+    items: [...order.items].sort((a, b) => {
+      const sortA = WEIGHT_CLASS_SORT[a.vegetable.category.weightClass] ?? 99;
+      const sortB = WEIGHT_CLASS_SORT[b.vegetable.category.weightClass] ?? 99;
+      return sortA - sortB;
+    }),
+  }));
+
+  res.json(result);
 };

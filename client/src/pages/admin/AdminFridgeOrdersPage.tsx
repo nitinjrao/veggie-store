@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Zap, Package, Truck } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { adminService } from '../../services/adminService';
 import type { FridgeOrderStatus, PaymentStatus, Location, Refrigerator } from '../../types';
 import { formatDateTime } from '../../utils/formatting';
+import { getErrorMessage } from '../../utils/error';
 import {
   FRIDGE_ORDER_STATUS_STYLES,
   FRIDGE_ORDER_STATUS_LABELS,
@@ -16,6 +18,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'CONFIRMED', label: 'Confirmed' },
   { value: 'READY', label: 'Ready' },
   { value: 'PICKED_UP', label: 'Picked Up' },
+  { value: 'DELIVERED', label: 'Delivered' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
@@ -29,12 +32,14 @@ const PAYMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
 interface FridgeOrderListItem {
   id: string;
   orderNumber: string;
+  orderType?: 'FRIDGE_PICKUP' | 'HOME_DELIVERY';
   status: FridgeOrderStatus;
   totalAmount: string;
   paymentStatus: PaymentStatus;
   createdAt: string;
   customer?: { id: string; name: string | null; phone: string };
   refrigerator?: Refrigerator & { location?: Location };
+  address?: { label: string; text: string };
   assignedTo?: { id: string; name: string } | null;
   _count?: { items: number };
 }
@@ -50,6 +55,8 @@ export default function AdminFridgeOrdersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  const [quickConfirming, setQuickConfirming] = useState<string | null>(null);
 
   // Supporting data
   const [fridges, setFridges] = useState<Refrigerator[]>([]);
@@ -90,6 +97,12 @@ export default function AdminFridgeOrdersPage() {
     return () => clearTimeout(timer);
   }, [loadOrders]);
 
+  // Auto-refresh every 30s to pick up status changes from producer/transporter
+  useEffect(() => {
+    const interval = setInterval(() => loadOrders(), 30000);
+    return () => clearInterval(interval);
+  }, [loadOrders]);
+
   // Keep URL query params in sync with filters
   useEffect(() => {
     const params: Record<string, string> = {};
@@ -100,6 +113,19 @@ export default function AdminFridgeOrdersPage() {
 
   const handleFilterChange = () => {
     setPage(1);
+  };
+
+  const handleQuickConfirm = async (orderId: string) => {
+    setQuickConfirming(orderId);
+    try {
+      await adminService.quickConfirmOrder(orderId);
+      toast.success('Order confirmed');
+      loadOrders();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setQuickConfirming(null);
+    }
   };
 
   return (
@@ -191,8 +217,11 @@ export default function AdminFridgeOrdersPage() {
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-text-muted">Order #</th>
                   <th className="text-left px-4 py-3 font-medium text-text-muted">Customer</th>
+                  <th className="text-left px-4 py-3 font-medium text-text-muted hidden sm:table-cell">
+                    Type
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-text-muted hidden md:table-cell">
-                    Fridge / Location
+                    Fridge / Address
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-text-muted">Total</th>
                   <th className="text-left px-4 py-3 font-medium text-text-muted">Status</th>
@@ -203,6 +232,7 @@ export default function AdminFridgeOrdersPage() {
                   <th className="text-left px-4 py-3 font-medium text-text-muted hidden sm:table-cell">
                     Date
                   </th>
+                  <th className="text-left px-4 py-3 font-medium text-text-muted">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -223,11 +253,35 @@ export default function AdminFridgeOrdersPage() {
                       <p className="font-medium text-text-dark">{order.customer?.name || 'N/A'}</p>
                       <p className="text-xs text-text-muted">{order.customer?.phone}</p>
                     </td>
+                    <td className="px-4 py-3 hidden sm:table-cell">
+                      {order.orderType === 'HOME_DELIVERY' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                          <Truck className="w-3 h-3" />
+                          Delivery
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                          <Package className="w-3 h-3" />
+                          Pickup
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-text-muted hidden md:table-cell">
-                      <p className="font-medium text-text-dark text-xs">
-                        {order.refrigerator?.name}
-                      </p>
-                      <p className="text-xs">{order.refrigerator?.location?.name}</p>
+                      {order.orderType === 'HOME_DELIVERY' ? (
+                        <div>
+                          <p className="font-medium text-text-dark text-xs">
+                            {order.address?.label || 'Address'}
+                          </p>
+                          <p className="text-xs truncate max-w-[180px]">{order.address?.text}</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-medium text-text-dark text-xs">
+                            {order.refrigerator?.name}
+                          </p>
+                          <p className="text-xs">{order.refrigerator?.location?.name}</p>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 font-medium">
                       {'\u20B9'}
@@ -258,11 +312,26 @@ export default function AdminFridgeOrdersPage() {
                     <td className="px-4 py-3 text-text-muted text-xs hidden sm:table-cell">
                       {formatDateTime(order.createdAt)}
                     </td>
+                    <td className="px-4 py-3">
+                      {order.status === 'PENDING' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickConfirm(order.id);
+                          }}
+                          disabled={quickConfirming === order.id}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 whitespace-nowrap"
+                        >
+                          <Zap className="w-3 h-3" />
+                          {quickConfirming === order.id ? 'Confirming...' : 'Quick Confirm'}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-text-muted">
+                    <td colSpan={10} className="px-4 py-8 text-center text-text-muted">
                       No fridge orders found.
                     </td>
                   </tr>

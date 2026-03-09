@@ -42,7 +42,7 @@ export default function FridgeOrdersPage() {
   return (
     <>
       <Header />
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 py-5 sm:py-6">
         <h1 className="text-2xl font-bold text-text-dark mb-6">My Orders</h1>
 
         {loading ? (

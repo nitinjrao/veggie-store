@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/asyncHandler';
 import { authenticate, requireCustomer } from '../middleware/auth';
+import { upload } from '../middleware/upload';
 import {
   listLocations,
   getFridgeInventory,
@@ -8,6 +9,7 @@ import {
   getMyPickupOrders,
   getPickupOrder,
   markPickupOrderPaid,
+  uploadPaymentScreenshot,
 } from '../controllers/customerFridgeController';
 
 const router = Router();
@@ -25,6 +27,13 @@ router.put(
   authenticate,
   requireCustomer,
   asyncHandler(markPickupOrderPaid)
+);
+router.post(
+  '/pickup-orders/:id/payment-screenshot',
+  authenticate,
+  requireCustomer,
+  upload.single('screenshot'),
+  asyncHandler(uploadPaymentScreenshot)
 );
 
 export default router;

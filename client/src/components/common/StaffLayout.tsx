@@ -1,5 +1,5 @@
 import { Outlet, Navigate, Link, NavLink, useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Menu, X, ShoppingCart, Package } from 'lucide-react';
+import { LogOut, LayoutDashboard, Menu, X, ShoppingCart, Package, Truck, Layers } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useInitialize } from '../../hooks/useInitialize';
 import { useState, useMemo } from 'react';
@@ -31,8 +31,17 @@ export default function StaffLayout() {
     if (userRole === 'producer') {
       items.push(
         { to: `${config.basePath}/orders`, label: 'Orders', icon: ShoppingCart, end: false },
-        { to: `${config.basePath}/fridges`, label: 'Fridges', icon: Package, end: false }
+        { to: `${config.basePath}/fridges`, label: 'Fridges', icon: Package, end: false },
+        { to: `${config.basePath}/packing`, label: 'Packing', icon: Layers, end: false }
       );
+    }
+    if (userRole === 'transporter') {
+      items.push({
+        to: `${config.basePath}/orders`,
+        label: 'Orders',
+        icon: Truck,
+        end: false,
+      });
     }
     return items;
   }, [config, userRole]);

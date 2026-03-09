@@ -14,6 +14,7 @@ export interface Price {
   id: string;
   vegetableId: string;
   pricePerKg: string | null;
+  originalPricePerKg: string | null;
   pricePerPiece: string | null;
   pricePerPacket: string | null;
   pricePerBundle: string | null;
@@ -31,6 +32,7 @@ export interface Vegetable {
   emoji: string | null;
   description: string | null;
   available: boolean;
+  featured?: boolean;
   stockKg?: string;
   minStockAlert?: string;
   categoryId: string;
@@ -47,6 +49,26 @@ export interface User {
   email?: string;
 }
 
+export type OrderType = 'FRIDGE_PICKUP' | 'HOME_DELIVERY';
+
+export type NotificationType =
+  | 'ORDER_MODIFIED'
+  | 'ORDER_CONFIRMED'
+  | 'ORDER_READY'
+  | 'ORDER_CANCELLED'
+  | 'LOW_STOCK';
+
+export interface Notification {
+  id: string;
+  customerId: string;
+  orderId: string | null;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'OVERPAID';
 
 export type PaymentMethod = 'CASH' | 'UPI';
@@ -58,6 +80,7 @@ export interface Payment {
   method: PaymentMethod;
   reference: string | null;
   notes: string | null;
+  screenshotUrl: string | null;
   receivedAt: string;
   createdAt: string;
   loggedBy?: { name: string };
@@ -95,7 +118,7 @@ export interface Location {
 }
 
 export type RefrigeratorStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
-export type FridgeOrderStatus = 'PENDING' | 'CONFIRMED' | 'READY' | 'PICKED_UP' | 'CANCELLED';
+export type FridgeOrderStatus = 'PENDING' | 'CONFIRMED' | 'READY' | 'PICKED_UP' | 'DELIVERED' | 'CANCELLED';
 
 export interface Refrigerator {
   id: string;
@@ -119,7 +142,9 @@ export interface FridgePickupOrder {
   id: string;
   orderNumber: string;
   customerId: string;
-  refrigeratorId: string;
+  refrigeratorId: string | null;
+  orderType: OrderType;
+  addressId: string | null;
   status: FridgeOrderStatus;
   totalAmount: string;
   paidAmount: string;
@@ -129,11 +154,13 @@ export interface FridgePickupOrder {
   confirmedAt: string | null;
   readyAt: string | null;
   pickedUpAt: string | null;
+  deliveredAt: string | null;
   cancelledAt: string | null;
   createdAt: string;
   updatedAt: string;
   items: FridgePickupItem[];
   refrigerator?: Refrigerator & { location?: Location };
+  address?: Address;
   payments?: Payment[];
   assignedTo?: { id: string; name: string } | null;
   customer?: { id: string; name: string | null; phone: string };
@@ -144,9 +171,12 @@ export interface FridgePickupItem {
   pickupOrderId: string;
   vegetableId: string;
   quantity: string;
+  originalQuantity: string | null;
   unit: UnitType;
   unitPrice: string;
   totalPrice: string;
+  isRemoved: boolean;
+  removalReason: string | null;
   vegetable: Vegetable;
 }
 

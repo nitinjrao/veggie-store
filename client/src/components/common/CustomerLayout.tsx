@@ -6,7 +6,7 @@ export default function CustomerLayout() {
 
   return (
     <div className="min-h-screen bg-bg-light">
-      <main className="max-w-7xl mx-auto">
+      <main>
         <Outlet />
       </main>
     </div>

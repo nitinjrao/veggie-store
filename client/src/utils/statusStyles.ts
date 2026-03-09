@@ -5,6 +5,7 @@ export const FRIDGE_ORDER_STATUS_STYLES: Record<FridgeOrderStatus, string> = {
   CONFIRMED: 'bg-blue-100 text-blue-800 border-blue-200',
   READY: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   PICKED_UP: 'bg-green-100 text-green-800 border-green-200',
+  DELIVERED: 'bg-teal-100 text-teal-800 border-teal-200',
   CANCELLED: 'bg-red-100 text-red-800 border-red-200',
 };
 
@@ -20,5 +21,6 @@ export const FRIDGE_ORDER_STATUS_LABELS: Record<FridgeOrderStatus, string> = {
   CONFIRMED: 'Confirmed',
   READY: 'Ready',
   PICKED_UP: 'Picked Up',
+  DELIVERED: 'Delivered',
   CANCELLED: 'Cancelled',
 };

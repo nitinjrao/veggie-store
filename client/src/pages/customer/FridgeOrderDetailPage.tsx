@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Box, MapPin, CreditCard, X } from 'lucide-react';
+import { ArrowLeft, Box, MapPin, CreditCard, X, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Header from '../../components/common/Header';
 import { fridgeService } from '../../services/fridgeService';
@@ -23,6 +23,9 @@ export default function FridgeOrderDetailPage() {
   const [payMethod, setPayMethod] = useState<'UPI' | 'CASH'>('UPI');
   const [payReference, setPayReference] = useState('');
   const [paying, setPaying] = useState(false);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -35,17 +38,43 @@ export default function FridgeOrderDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const handleScreenshotSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScreenshotFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setScreenshotPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearScreenshot = () => {
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleMarkPaid = async () => {
     if (!id) return;
     setPaying(true);
     try {
-      const updated = await fridgeService.markOrderPaid(id, {
-        method: payMethod,
-        reference: payReference.trim() || undefined,
-      });
+      let updated;
+      if (screenshotFile) {
+        updated = await fridgeService.uploadPaymentScreenshot(
+          id,
+          screenshotFile,
+          payMethod,
+          payReference.trim() || undefined
+        );
+      } else {
+        updated = await fridgeService.markOrderPaid(id, {
+          method: payMethod,
+          reference: payReference.trim() || undefined,
+        });
+      }
       setOrder(updated);
       setShowPayModal(false);
       setPayReference('');
+      clearScreenshot();
       toast.success('Payment recorded!');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
@@ -145,6 +174,45 @@ export default function FridgeOrderDetailPage() {
                   placeholder="Transaction ID or note..."
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all"
                 />
+              </div>
+
+              {/* Screenshot upload */}
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">
+                  Payment Screenshot (optional)
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleScreenshotSelect}
+                  className="hidden"
+                />
+                {screenshotPreview ? (
+                  <div className="relative">
+                    <img
+                      src={screenshotPreview}
+                      alt="Screenshot preview"
+                      className="w-full h-32 object-cover rounded-xl border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={clearScreenshot}
+                      className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-text-muted text-sm flex items-center justify-center gap-2 hover:border-primary-green hover:text-primary-green transition-all"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Attach Screenshot
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
@@ -290,14 +358,28 @@ export default function FridgeOrderDetailPage() {
                     key={payment.id}
                     className="flex items-center justify-between text-sm p-2 rounded-lg bg-gray-50"
                   >
-                    <div>
-                      <span className="font-medium text-text-dark">
-                        ₹{parseFloat(payment.amount).toFixed(2)}
-                      </span>
-                      <span className="text-text-muted ml-2">{payment.method}</span>
-                      {payment.reference && (
-                        <span className="text-text-muted ml-1 text-xs">({payment.reference})</span>
+                    <div className="flex items-center gap-2">
+                      {payment.screenshotUrl && (
+                        <button
+                          onClick={() => window.open(payment.screenshotUrl!, '_blank')}
+                          className="flex-shrink-0"
+                        >
+                          <img
+                            src={payment.screenshotUrl}
+                            alt="Payment screenshot"
+                            className="w-8 h-8 rounded object-cover border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer"
+                          />
+                        </button>
                       )}
+                      <div>
+                        <span className="font-medium text-text-dark">
+                          ₹{parseFloat(payment.amount).toFixed(2)}
+                        </span>
+                        <span className="text-text-muted ml-2">{payment.method}</span>
+                        {payment.reference && (
+                          <span className="text-text-muted ml-1 text-xs">({payment.reference})</span>
+                        )}
+                      </div>
                     </div>
                     <span className="text-xs text-text-muted">
                       {new Date(payment.createdAt).toLocaleDateString('en-IN', {

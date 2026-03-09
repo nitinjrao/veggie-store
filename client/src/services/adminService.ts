@@ -25,6 +25,13 @@ export interface DashboardStaffActivity {
   totalActionsToday: number;
 }
 
+export interface DashboardTransporterActivity {
+  id: string;
+  name: string;
+  role: string;
+  pickupsToday: number;
+}
+
 export interface DashboardAttentionItem {
   type: string;
   message: string;
@@ -64,6 +71,7 @@ export interface DashboardStats {
   }[];
   fridgeHealth: DashboardFridgeHealth[];
   staffActivity: DashboardStaffActivity[];
+  transporterActivity: DashboardTransporterActivity[];
   attentionItems: DashboardAttentionItem[];
 }
 
@@ -218,6 +226,23 @@ export const adminService = {
     orderId: string,
     data: { amount: number; method: string; reference?: string; notes?: string }
   ) => api.post(`/admin/fridge-orders/${orderId}/payments`, data).then((r) => r.data),
+  uploadFridgePaymentScreenshot: (
+    orderId: string,
+    file: File,
+    data: { amount: number; method: string; reference?: string; notes?: string }
+  ) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('amount', data.amount.toString());
+    formData.append('method', data.method);
+    if (data.reference) formData.append('reference', data.reference);
+    if (data.notes) formData.append('notes', data.notes);
+    return api
+      .post(`/admin/fridge-orders/${orderId}/payment-screenshot`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
 
   // Fridge Order - new fulfillment endpoints
   assignFridgeOrder: (orderId: string, staffId: string) =>
@@ -225,6 +250,16 @@ export const adminService = {
   getFridgePendingCounts: () => api.get('/admin/fridge-orders/pending-counts').then((r) => r.data),
   getFridgeActiveOrders: (fridgeId: string) =>
     api.get(`/admin/fridge-orders/by-fridge/${fridgeId}`).then((r) => r.data),
+
+  // Partial order modification
+  modifyOrder: (
+    orderId: string,
+    items: { itemId: string; quantity?: number; remove?: boolean; removalReason?: string }[]
+  ) => api.put(`/admin/fridge-orders/${orderId}/modify`, { items }).then((r) => r.data),
+
+  // Quick confirm (one-click)
+  quickConfirmOrder: (orderId: string) =>
+    api.put(`/admin/fridge-orders/${orderId}/quick-confirm`).then((r) => r.data),
 
   // Fridge producer assignments
   getFridgeProducers: (fridgeId: string) =>

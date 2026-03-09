@@ -73,7 +73,21 @@ enum FridgeOrderStatus {
   CONFIRMED
   READY
   PICKED_UP
+  DELIVERED
   CANCELLED
+}
+
+enum OrderType {
+  FRIDGE_PICKUP
+  HOME_DELIVERY
+}
+
+enum NotificationType {
+  ORDER_MODIFIED
+  ORDER_CONFIRMED
+  ORDER_READY
+  ORDER_CANCELLED
+  LOW_STOCK
 }
 
 model Customer {
@@ -90,6 +104,7 @@ model Customer {
   favorites        Favorite[]
   addresses        Address[]
   fridgePickupOrders FridgePickupOrder[]
+  notifications    Notification[]
 
   @@map("customers")
 }
@@ -163,6 +178,7 @@ model Vegetable {
   emoji         String?
   description   String?
   available     Boolean  @default(true)
+  featured      Boolean  @default(false)
   stockKg       Decimal  @default(0) @map("stock_kg") @db.Decimal(10, 3)
   minStockAlert Decimal  @default(5) @map("min_stock_alert") @db.Decimal(10, 3)
   categoryId    String   @map("category_id")
@@ -183,16 +199,17 @@ model Vegetable {
 }
 
 model Price {
-  id            String   @id @default(uuid())
-  vegetableId   String   @map("vegetable_id")
-  pricePerKg    Decimal? @map("price_per_kg") @db.Decimal(10, 2)
-  pricePerPiece Decimal? @map("price_per_piece") @db.Decimal(10, 2)
-  pricePerPacket Decimal? @map("price_per_packet") @db.Decimal(10, 2)
-  pricePerBundle Decimal? @map("price_per_bundle") @db.Decimal(10, 2)
-  pricePerBunch  Decimal? @map("price_per_bunch") @db.Decimal(10, 2)
-  packetWeight  Decimal? @map("packet_weight") @db.Decimal(10, 3)
-  effectiveFrom DateTime @default(now()) @map("effective_from")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id               String   @id @default(uuid())
+  vegetableId      String   @map("vegetable_id")
+  pricePerKg       Decimal? @map("price_per_kg") @db.Decimal(10, 2)
+  originalPricePerKg Decimal? @map("original_price_per_kg") @db.Decimal(10, 2)
+  pricePerPiece    Decimal? @map("price_per_piece") @db.Decimal(10, 2)
+  pricePerPacket   Decimal? @map("price_per_packet") @db.Decimal(10, 2)
+  pricePerBundle   Decimal? @map("price_per_bundle") @db.Decimal(10, 2)
+  pricePerBunch    Decimal? @map("price_per_bunch") @db.Decimal(10, 2)
+  packetWeight     Decimal? @map("packet_weight") @db.Decimal(10, 3)
+  effectiveFrom    DateTime @default(now()) @map("effective_from")
+  createdAt        DateTime @default(now()) @map("created_at")
 
   vegetable Vegetable @relation(fields: [vegetableId], references: [id])
 
@@ -229,6 +246,7 @@ model Payment {
   amount             Decimal       @db.Decimal(10, 2)
   method             PaymentMethod
   reference          String?
+  screenshotUrl      String?       @map("screenshot_url")
   notes              String?
   loggedById         String        @map("logged_by_id")
   receivedAt         DateTime      @default(now()) @map("received_at")
@@ -290,7 +308,8 @@ model Address {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer          Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fridgePickupOrders FridgePickupOrder[]
 
   @@map("addresses")
 }
@@ -380,7 +399,9 @@ model FridgePickupOrder {
   id              String            @id @default(uuid())
   orderNumber     String            @unique @map("order_number")
   customerId      String            @map("customer_id")
-  refrigeratorId  String            @map("refrigerator_id")
+  refrigeratorId  String?           @map("refrigerator_id")
+  orderType       OrderType         @default(FRIDGE_PICKUP) @map("order_type")
+  addressId       String?           @map("address_id")
   status          FridgeOrderStatus @default(PENDING)
   totalAmount     Decimal           @map("total_amount") @db.Decimal(10, 2)
   paidAmount      Decimal           @default(0) @map("paid_amount") @db.Decimal(10, 2)
@@ -390,12 +411,14 @@ model FridgePickupOrder {
   confirmedAt     DateTime?         @map("confirmed_at")
   readyAt         DateTime?         @map("ready_at")
   pickedUpAt      DateTime?         @map("picked_up_at")
+  deliveredAt     DateTime?         @map("delivered_at")
   cancelledAt     DateTime?         @map("cancelled_at")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
   customer     Customer         @relation(fields: [customerId], references: [id])
-  refrigerator Refrigerator     @relation(fields: [refrigeratorId], references: [id])
+  refrigerator Refrigerator?    @relation(fields: [refrigeratorId], references: [id])
+  address      Address?         @relation(fields: [addressId], references: [id])
   assignedTo   StaffUser?       @relation("AssignedToStaff", fields: [assignedToId], references: [id])
   items        FridgePickupItem[]
   payments     Payment[]
@@ -404,13 +427,16 @@ model FridgePickupOrder {
 }
 
 model FridgePickupItem {
-  id            String  @id @default(uuid())
-  pickupOrderId String  @map("pickup_order_id")
-  vegetableId   String  @map("vegetable_id")
-  quantity      Decimal @db.Decimal(10, 3)
-  unit          UnitType
-  unitPrice     Decimal @map("unit_price") @db.Decimal(10, 2)
-  totalPrice    Decimal @map("total_price") @db.Decimal(10, 2)
+  id               String   @id @default(uuid())
+  pickupOrderId    String   @map("pickup_order_id")
+  vegetableId      String   @map("vegetable_id")
+  quantity         Decimal  @db.Decimal(10, 3)
+  originalQuantity Decimal? @map("original_quantity") @db.Decimal(10, 3)
+  unit             UnitType
+  unitPrice        Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice       Decimal  @map("total_price") @db.Decimal(10, 2)
+  isRemoved        Boolean  @default(false) @map("is_removed")
+  removalReason    String?  @map("removal_reason")
 
   pickupOrder FridgePickupOrder @relation(fields: [pickupOrderId], references: [id])
   vegetable   Vegetable         @relation(fields: [vegetableId], references: [id])
@@ -429,4 +455,20 @@ model ProducerFridgeAssignment {
 
   @@unique([staffUserId, refrigeratorId])
   @@map("producer_fridge_assignments")
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  customerId String           @map("customer_id")
+  orderId    String?          @map("order_id")
+  type       NotificationType
+  title      String
+  message    String
+  isRead     Boolean          @default(false) @map("is_read")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, isRead])
+  @@map("notifications")
 }

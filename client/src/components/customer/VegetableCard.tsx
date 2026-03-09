@@ -75,15 +75,31 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
   const displayPrice = getDisplayPrice(vegetable, selectedUnit);
   const unitSuffix = getUnitSuffix(selectedUnit);
 
+  // MRP / discount calculation
+  const originalPrice = price?.originalPricePerKg ? parseFloat(price.originalPricePerKg) : null;
+  const sellingPrice = price?.pricePerKg ? parseFloat(price.pricePerKg) : null;
+  const discountPercent =
+    originalPrice && sellingPrice && originalPrice > sellingPrice
+      ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100)
+      : null;
+  const showDiscount = discountPercent && (selectedUnit === 'KG' || selectedUnit === 'GRAM');
+
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-300 p-4 flex flex-col relative overflow-hidden">
-      {/* Subtle gradient overlay on hover */}
-      <div className="absolute inset-0 bg-gradient-to-b from-green-50/0 to-green-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+    <div className="group bg-white rounded-2xl border border-gray-100/80 shadow-card hover:shadow-card-hover transition-all duration-300 p-4 flex flex-col relative overflow-hidden">
+      {/* Discount badge */}
+      {showDiscount && (
+        <span className="absolute top-2.5 left-2.5 z-10 px-2 py-0.5 rounded-lg bg-orange-500 text-white text-[10px] font-bold tracking-wide shadow-sm">
+          {discountPercent}% OFF
+        </span>
+      )}
+
+      {/* Hover gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-green-50/0 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
       {showFav && (
         <button
           onClick={() => toggleFav(vegetable.id)}
-          className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/80 hover:bg-white shadow-sm transition-all active:scale-90"
+          className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/90 hover:bg-white shadow-sm transition-all active:scale-90"
         >
           <Heart
             className={`w-4 h-4 transition-all duration-200 ${
@@ -93,9 +109,9 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
         </button>
       )}
 
-      {/* Emoji with float animation on hover */}
+      {/* Emoji */}
       <div
-        className={`text-4xl text-center mb-2 py-2 group-hover:animate-float transition-transform ${vegetable.name === 'Radish' ? 'grayscale brightness-150' : ''}`}
+        className={`text-4xl sm:text-5xl text-center mb-2 py-2 group-hover:animate-float transition-transform ${vegetable.name === 'Radish' ? 'grayscale brightness-150' : ''}`}
       >
         {vegetable.emoji || '🥬'}
       </div>
@@ -112,10 +128,15 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
       {/* Price section */}
       <div className="mt-auto pt-3 space-y-0.5 relative z-10">
         {displayPrice !== null && (
-          <p className="text-base font-bold text-primary-green-dark">
-            ₹{displayPrice}
-            <span className="text-xs font-medium text-text-muted">{unitSuffix}</span>
-          </p>
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <p className="text-base font-bold text-primary-green-dark">
+              ₹{displayPrice}
+              <span className="text-xs font-medium text-text-muted ml-0.5">{unitSuffix}</span>
+            </p>
+            {showDiscount && originalPrice && (
+              <span className="text-xs text-text-muted line-through">₹{originalPrice}</span>
+            )}
+          </div>
         )}
         {selectedUnit === 'KG' && price?.pricePerPacket && packetWeight && (
           <p className="text-xs text-text-muted">
@@ -131,7 +152,7 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
             <button
               key={unit}
               onClick={() => setSelectedUnit(unit)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                 selectedUnit === unit
                   ? 'bg-primary-green-dark text-white shadow-sm'
                   : 'bg-gray-100 text-text-muted hover:bg-gray-200'
@@ -166,7 +187,7 @@ export default function VegetableCard({ vegetable }: VegetableCardProps) {
         ) : (
           <button
             onClick={() => addItem(vegetable, selectedUnit)}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-green text-white text-sm font-medium hover:shadow-glow-green transition-all active:scale-[0.97]"
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-green text-white text-sm font-semibold hover:shadow-glow-green transition-all active:scale-[0.97]"
           >
             <ShoppingCart className="w-4 h-4" />
             Add to Cart

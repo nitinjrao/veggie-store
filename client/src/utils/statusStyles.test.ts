@@ -9,10 +9,10 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('FRIDGE_ORDER_STATUS_STYLES', () => {
-  const expectedStatuses = ['PENDING', 'CONFIRMED', 'READY', 'PICKED_UP', 'CANCELLED'] as const;
+  const expectedStatuses = ['PENDING', 'CONFIRMED', 'READY', 'PICKED_UP', 'DELIVERED', 'CANCELLED'] as const;
 
-  it('contains exactly 5 fridge order status keys', () => {
-    expect(Object.keys(FRIDGE_ORDER_STATUS_STYLES)).toHaveLength(5);
+  it('contains exactly 6 fridge order status keys', () => {
+    expect(Object.keys(FRIDGE_ORDER_STATUS_STYLES)).toHaveLength(6);
   });
 
   it.each(expectedStatuses)('has key "%s"', (status) => {
@@ -39,6 +39,10 @@ describe('FRIDGE_ORDER_STATUS_STYLES', () => {
 
   it('PICKED_UP style contains green class', () => {
     expect(FRIDGE_ORDER_STATUS_STYLES.PICKED_UP).toContain('green');
+  });
+
+  it('DELIVERED style contains teal class', () => {
+    expect(FRIDGE_ORDER_STATUS_STYLES.DELIVERED).toContain('teal');
   });
 
   it('CANCELLED style contains red class', () => {
@@ -89,10 +93,10 @@ describe('PAYMENT_STATUS_STYLES', () => {
 // ---------------------------------------------------------------------------
 
 describe('FRIDGE_ORDER_STATUS_LABELS', () => {
-  const expectedStatuses = ['PENDING', 'CONFIRMED', 'READY', 'PICKED_UP', 'CANCELLED'] as const;
+  const expectedStatuses = ['PENDING', 'CONFIRMED', 'READY', 'PICKED_UP', 'DELIVERED', 'CANCELLED'] as const;
 
-  it('contains exactly 5 fridge order status label keys', () => {
-    expect(Object.keys(FRIDGE_ORDER_STATUS_LABELS)).toHaveLength(5);
+  it('contains exactly 6 fridge order status label keys', () => {
+    expect(Object.keys(FRIDGE_ORDER_STATUS_LABELS)).toHaveLength(6);
   });
 
   it.each(expectedStatuses)('has key "%s"', (status) => {
@@ -119,6 +123,10 @@ describe('FRIDGE_ORDER_STATUS_LABELS', () => {
 
   it('maps PICKED_UP to "Picked Up"', () => {
     expect(FRIDGE_ORDER_STATUS_LABELS.PICKED_UP).toBe('Picked Up');
+  });
+
+  it('maps DELIVERED to "Delivered"', () => {
+    expect(FRIDGE_ORDER_STATUS_LABELS.DELIVERED).toBe('Delivered');
   });
 
   it('maps CANCELLED to "Cancelled"', () => {

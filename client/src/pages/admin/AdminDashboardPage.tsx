@@ -21,6 +21,7 @@ import {
   TriangleAlert,
   ArrowRight,
   TrendingUp,
+  Truck,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { adminService } from '../../services/adminService';
@@ -28,6 +29,7 @@ import type {
   DashboardStats,
   DashboardFridgeHealth,
   DashboardStaffActivity,
+  DashboardTransporterActivity,
 } from '../../services/adminService';
 import type { FridgeOrderStatus } from '../../types';
 import { FRIDGE_ORDER_STATUS_STYLES } from '../../utils/statusStyles';
@@ -230,6 +232,11 @@ export default function AdminDashboardPage() {
           <StaffActivityPanel staff={stats?.staffActivity || []} />
         </div>
       </div>
+
+      {/* ── Transporter Activity ────────────────────────────── */}
+      {(stats?.transporterActivity || []).length > 0 && (
+        <TransporterActivityPanel transporters={stats?.transporterActivity || []} />
+      )}
 
       {/* ── Recent Orders + Low Stock ───────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -636,6 +643,73 @@ function StaffActivityPanel({ staff }: { staff: DashboardStaffActivity[] }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Transporter Activity Panel
+   ═══════════════════════════════════════════════════════════════ */
+
+function TransporterActivityPanel({
+  transporters,
+}: {
+  transporters: DashboardTransporterActivity[];
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-bold text-text-dark flex items-center gap-2">
+          <Truck className="w-4 h-4 text-violet-500" />
+          Transporter Activity
+          <span className="text-xs font-normal text-text-muted ml-1">Today</span>
+        </h2>
+        <Link
+          to="/admin/staff"
+          className="text-xs text-primary-green hover:underline font-medium flex items-center gap-1"
+        >
+          Manage <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {transporters.map((t) => {
+          const isActive = t.pickupsToday > 0;
+          return (
+            <div
+              key={t.id}
+              className={`rounded-xl border p-3.5 transition-all ${
+                isActive
+                  ? 'border-violet-200 bg-gradient-to-r from-violet-50/50 to-transparent'
+                  : 'border-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm ${
+                    isActive
+                      ? 'bg-gradient-to-br from-violet-500 to-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {t.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text-dark truncate">{t.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3 h-3 text-violet-500" />
+                    <span className="text-[11px] text-violet-600">
+                      {t.pickupsToday} pickup{t.pickupsToday !== 1 ? 's' : ''} today
+                    </span>
+                  </div>
+                </div>
+                {isActive && (
+                  <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

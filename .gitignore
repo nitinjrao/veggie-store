@@ -1,9 +1,12 @@
 node_modules/
 dist/
 .env
+.env.*
 *.log
 .DS_Store
 coverage/
 .prisma/
 server/uploads/*
 !server/uploads/.gitkeep
+PRD.md
+.claude/

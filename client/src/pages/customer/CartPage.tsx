@@ -1,37 +1,73 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, MapPin } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, MapPin, Package, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
 import { fridgeService } from '../../services/fridgeService';
-import type { UnitType } from '../../types';
+import { addressService } from '../../services/addressService';
+import api from '../../services/api';
+import type { UnitType, Address } from '../../types';
 import Header from '../../components/common/Header';
+import ProfileCompletenessGate from '../../components/customer/ProfileCompletenessGate';
 import { getErrorMessage } from '../../utils/error';
 import { getAvailableUnits, UNIT_LABELS } from '../../utils/pricing';
 import FridgeSelect from '../../components/common/FridgeSelect';
 
 export default function CartPage() {
-  const { items, removeItem, incrementItem, decrementItem, updateUnit, clearCart } = useCartStore();
+  const {
+    items, removeItem, incrementItem, decrementItem, updateUnit, clearCart,
+    orderType, setOrderType, selectedFridgeId, setSelectedFridgeId,
+  } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [locations, setLocations] = useState<
     { id: string; name: string; refrigerators: { id: string; name: string }[] }[]
   >([]);
-  const [selectedFridgeId, setSelectedFridgeId] = useState<string>('');
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stockError, setStockError] = useState('');
+  const [showCompletenessGate, setShowCompletenessGate] = useState(false);
+  const [missingWhatsapp, setMissingWhatsapp] = useState(false);
+  const [missingAddress, setMissingAddress] = useState(false);
 
   useEffect(() => {
     fridgeService
       .getLocations()
       .then(setLocations)
       .catch(() => {});
-  }, []);
+    if (isAuthenticated) {
+      addressService
+        .getAll()
+        .then((data) => {
+          setAddresses(data);
+          const defaultAddr = data.find((a) => a.isDefault);
+          if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const total = items.reduce((sum, item) => sum + item.totalPrice, 0);
+
+  const checkProfileCompleteness = async (): Promise<boolean> => {
+    try {
+      const { data } = await api.get('/customers/profile/completeness');
+      if (!data.isComplete) {
+        setMissingWhatsapp(!data.hasWhatsapp);
+        setMissingAddress(!data.hasAddress);
+        setShowCompletenessGate(true);
+        return false;
+      }
+      return true;
+    } catch {
+      // If the endpoint doesn't exist yet, allow the order
+      return true;
+    }
+  };
 
   const handlePlaceOrder = async () => {
     if (!isAuthenticated) {
@@ -39,18 +75,30 @@ export default function CartPage() {
       return;
     }
 
+    // Check profile completeness
+    const isComplete = await checkProfileCompleteness();
+    if (!isComplete) return;
+
     setLoading(true);
     setError('');
 
     try {
-      const order = await fridgeService.placePickupOrder({
-        refrigeratorId: selectedFridgeId,
+      const payload: Parameters<typeof fridgeService.placePickupOrder>[0] = {
+        orderType,
         items: items.map((item) => ({
           vegetableId: item.vegetableId,
           quantity: item.quantity,
           unit: item.unit,
         })),
-      });
+      };
+
+      if (orderType === 'FRIDGE_PICKUP') {
+        payload.refrigeratorId = selectedFridgeId;
+      } else {
+        payload.addressId = selectedAddressId;
+      }
+
+      const order = await fridgeService.placePickupOrder(payload);
 
       clearCart();
       navigate(`/orders/${order.id}/confirmation`);
@@ -68,6 +116,9 @@ export default function CartPage() {
       setLoading(false);
     }
   };
+
+  const canPlaceOrder =
+    orderType === 'FRIDGE_PICKUP' ? !!selectedFridgeId : !!selectedAddressId;
 
   if (items.length === 0) {
     return (
@@ -174,19 +225,80 @@ export default function CartPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-6 space-y-4 animate-fade-in-up">
-          <h2 className="font-bold text-text-dark">Pickup Location</h2>
-
+          {/* Order Type Tabs */}
           <div>
-            <label className="block text-sm font-medium text-text-muted mb-1.5">
-              <MapPin className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
-              Select a Fridge
-            </label>
-            <FridgeSelect
-              locations={locations}
-              value={selectedFridgeId}
-              onChange={setSelectedFridgeId}
-            />
+            <h2 className="font-bold text-text-dark mb-3">Order Type</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setOrderType('FRIDGE_PICKUP')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  orderType === 'FRIDGE_PICKUP'
+                    ? 'bg-primary-green text-white shadow-sm'
+                    : 'bg-gray-50 border border-gray-200 text-text-muted hover:bg-gray-100'
+                }`}
+              >
+                <Package className="w-4 h-4" />
+                Fridge Pickup
+              </button>
+              <button
+                onClick={() => setOrderType('HOME_DELIVERY')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  orderType === 'HOME_DELIVERY'
+                    ? 'bg-primary-green text-white shadow-sm'
+                    : 'bg-gray-50 border border-gray-200 text-text-muted hover:bg-gray-100'
+                }`}
+              >
+                <Truck className="w-4 h-4" />
+                Home Delivery
+              </button>
+            </div>
           </div>
+
+          {/* Fridge Pickup: select fridge */}
+          {orderType === 'FRIDGE_PICKUP' && (
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-1.5">
+                <MapPin className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
+                Select a Fridge
+              </label>
+              <FridgeSelect
+                locations={locations}
+                value={selectedFridgeId}
+                onChange={setSelectedFridgeId}
+              />
+            </div>
+          )}
+
+          {/* Home Delivery: select address */}
+          {orderType === 'HOME_DELIVERY' && (
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-1.5">
+                <MapPin className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
+                Delivery Address
+              </label>
+              {addresses.length > 0 ? (
+                <select
+                  value={selectedAddressId}
+                  onChange={(e) => setSelectedAddressId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/40 focus:border-primary-green transition-all bg-white"
+                >
+                  <option value="">Select an address...</option>
+                  {addresses.map((addr) => (
+                    <option key={addr.id} value={addr.id}>
+                      {addr.label} - {addr.text}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-sm text-text-muted">
+                  No saved addresses.{' '}
+                  <Link to="/profile" className="text-primary-green font-medium hover:underline">
+                    Add an address
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1.5">
@@ -216,7 +328,7 @@ export default function CartPage() {
             {isAuthenticated ? (
               <button
                 onClick={handlePlaceOrder}
-                disabled={loading || !selectedFridgeId}
+                disabled={loading || !canPlaceOrder}
                 className="w-full py-3.5 rounded-xl bg-gradient-green text-white font-bold text-base hover:shadow-glow-green transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
                 {loading ? (
@@ -242,6 +354,17 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      <ProfileCompletenessGate
+        isOpen={showCompletenessGate}
+        onClose={() => setShowCompletenessGate(false)}
+        onComplete={() => {
+          setShowCompletenessGate(false);
+          handlePlaceOrder();
+        }}
+        missingWhatsapp={missingWhatsapp}
+        missingAddress={missingAddress}
+      />
     </>
   );
 }

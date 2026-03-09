@@ -10,7 +10,9 @@ import { generateFridgeOrderNumber } from '../utils/orderNumber';
 // ─── Schemas ────────────────────────────────────────────────────────
 
 const placePickupOrderSchema = z.object({
-  refrigeratorId: z.string().uuid(),
+  refrigeratorId: z.string().uuid().optional(),
+  orderType: z.enum(['FRIDGE_PICKUP', 'HOME_DELIVERY']).default('FRIDGE_PICKUP'),
+  addressId: z.string().uuid().optional(),
   items: z
     .array(
       z.object({
@@ -25,6 +27,7 @@ const placePickupOrderSchema = z.object({
 const markPaidSchema = z.object({
   method: z.enum(['CASH', 'UPI']),
   reference: z.string().optional(),
+  screenshotUrl: z.string().optional(),
 });
 
 // ─── Controllers ────────────────────────────────────────────────────
@@ -78,16 +81,54 @@ export const getFridgeInventory = async (req: Request, res: Response) => {
 export const placePickupOrder = async (req: Request, res: Response) => {
   const user = getAuthUser(req);
   const customerId = user.id;
-  const { refrigeratorId, items } = placePickupOrderSchema.parse(req.body);
+  const { refrigeratorId, orderType, addressId, items } = placePickupOrderSchema.parse(req.body);
+
+  // Validate based on order type
+  if (orderType === 'FRIDGE_PICKUP' && !refrigeratorId) {
+    throw new ApiError(400, 'refrigeratorId is required for fridge pickup orders');
+  }
+  if (orderType === 'HOME_DELIVERY' && !addressId) {
+    throw new ApiError(400, 'addressId is required for home delivery orders');
+  }
+
+  // Validate mandatory profile fields before placing order
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    include: { _count: { select: { addresses: true } } },
+  });
+
+  if (!customer) {
+    throw new ApiError(404, 'Customer not found');
+  }
+
+  if (!customer.whatsapp || customer.whatsapp.trim() === '') {
+    throw new ApiError(400, 'WhatsApp number is required before placing an order. Please update your profile.');
+  }
+
+  if (customer._count.addresses === 0) {
+    throw new ApiError(400, 'At least one address is required before placing an order. Please add an address.');
+  }
 
   const order = await prisma.$transaction(async (tx) => {
-    // 1. Validate fridge exists and is ACTIVE
-    const fridge = await tx.refrigerator.findUnique({ where: { id: refrigeratorId } });
-    if (!fridge) {
-      throw new ApiError(404, 'Refrigerator not found');
+    // 1. Validate fridge (for FRIDGE_PICKUP) or address (for HOME_DELIVERY)
+    if (orderType === 'FRIDGE_PICKUP') {
+      const fridge = await tx.refrigerator.findUnique({ where: { id: refrigeratorId! } });
+      if (!fridge) {
+        throw new ApiError(404, 'Refrigerator not found');
+      }
+      if (fridge.status !== 'ACTIVE') {
+        throw new ApiError(400, 'Refrigerator is not currently active');
+      }
     }
-    if (fridge.status !== 'ACTIVE') {
-      throw new ApiError(400, 'Refrigerator is not currently active');
+
+    if (orderType === 'HOME_DELIVERY') {
+      const address = await tx.address.findUnique({ where: { id: addressId! } });
+      if (!address) {
+        throw new ApiError(404, 'Address not found');
+      }
+      if (address.customerId !== customerId) {
+        throw new ApiError(403, 'Address does not belong to this customer');
+      }
     }
 
     // 2. Fetch all vegetables with current prices
@@ -167,7 +208,7 @@ export const placePickupOrder = async (req: Request, res: Response) => {
           stockDeductKg = new Decimal(item.quantity);
       }
 
-      // Check main vegetable stock
+      // Check warehouse stock
       if (veg.stockKg.lessThan(stockDeductKg)) {
         throw new ApiError(400, `Insufficient stock for ${veg.name}. Available: ${veg.stockKg}kg`);
       }
@@ -193,7 +234,9 @@ export const placePickupOrder = async (req: Request, res: Response) => {
       data: {
         orderNumber,
         customerId,
-        refrigeratorId,
+        orderType,
+        refrigeratorId: orderType === 'FRIDGE_PICKUP' ? refrigeratorId! : null,
+        addressId: orderType === 'HOME_DELIVERY' ? addressId! : null,
         totalAmount,
         items: {
           create: orderItems.map(({ stockDeductKg: _, ...oi }) => oi),
@@ -211,10 +254,11 @@ export const placePickupOrder = async (req: Request, res: Response) => {
           },
         },
         refrigerator: { include: { location: true } },
+        address: true,
       },
     });
 
-    // 6. Deduct main vegetable stock and create inventory logs
+    // 6. Deduct warehouse stock and create inventory logs
     for (const oi of orderItems) {
       await tx.vegetable.update({
         where: { id: oi.vegetableId },
@@ -312,7 +356,7 @@ export const markPickupOrderPaid = async (req: Request, res: Response) => {
   const user = getAuthUser(req);
   const customerId = user.id;
   const id = req.params.id as string;
-  const { method, reference } = markPaidSchema.parse(req.body);
+  const { method, reference, screenshotUrl } = markPaidSchema.parse(req.body);
 
   const order = await prisma.fridgePickupOrder.findUnique({ where: { id } });
 
@@ -328,12 +372,27 @@ export const markPickupOrderPaid = async (req: Request, res: Response) => {
     throw new ApiError(400, 'Order is already marked as paid');
   }
 
+  const updateData: Record<string, unknown> = {
+    paidAmount: order.totalAmount,
+    paymentStatus: 'PAID',
+  };
+
+  // Store screenshot URL and payment info in notes for admin visibility
+  const paymentInfo = [
+    `Payment: ${method}`,
+    reference ? `Ref: ${reference}` : null,
+    screenshotUrl ? `Screenshot: ${screenshotUrl}` : null,
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
+  if (paymentInfo) {
+    updateData.notes = order.notes ? `${order.notes}\n${paymentInfo}` : paymentInfo;
+  }
+
   const updated = await prisma.fridgePickupOrder.update({
     where: { id },
-    data: {
-      paidAmount: order.totalAmount,
-      paymentStatus: 'PAID',
-    },
+    data: updateData,
     include: {
       items: {
         include: {
@@ -353,5 +412,61 @@ export const markPickupOrderPaid = async (req: Request, res: Response) => {
     ...updated,
     customerPaymentMethod: method,
     customerPaymentRef: reference ?? null,
+    customerScreenshotUrl: screenshotUrl ?? null,
+  });
+};
+
+// ─── Payment screenshot upload ──────────────────────────────────────
+
+export const uploadPaymentScreenshot = async (req: Request, res: Response) => {
+  const user = getAuthUser(req);
+  const customerId = user.id;
+  const id = req.params.id as string;
+
+  const order = await prisma.fridgePickupOrder.findUnique({ where: { id } });
+
+  if (!order) {
+    throw new ApiError(404, 'Pickup order not found');
+  }
+
+  if (order.customerId !== customerId) {
+    throw new ApiError(403, 'Access denied');
+  }
+
+  if (order.status === 'CANCELLED') {
+    throw new ApiError(400, 'Cannot upload screenshot for a cancelled order');
+  }
+
+  if (!req.file) {
+    throw new ApiError(400, 'Screenshot file is required');
+  }
+
+  const screenshotUrl = `/uploads/${req.file.filename}`;
+
+  res.json({ screenshotUrl });
+};
+
+// ─── Profile completeness check ─────────────────────────────────────
+
+export const getProfileCompleteness = async (req: Request, res: Response) => {
+  const user = getAuthUser(req);
+  const customerId = user.id;
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    include: { _count: { select: { addresses: true } } },
+  });
+
+  if (!customer) {
+    throw new ApiError(404, 'Customer not found');
+  }
+
+  const whatsappSet = !!customer.whatsapp && customer.whatsapp.trim() !== '';
+  const hasAddress = customer._count.addresses > 0;
+
+  res.json({
+    whatsappSet,
+    hasAddress,
+    canOrder: whatsappSet && hasAddress,
   });
 };

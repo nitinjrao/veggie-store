@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Phone,
   Plus,
+  Minus,
   CreditCard,
   Clock,
   CheckCircle2,
@@ -12,6 +13,12 @@ import {
   User,
   AlertTriangle,
   ArrowRight,
+  Trash2,
+  Camera,
+  X,
+  Package,
+  Truck,
+  MapPin,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminService } from '../../services/adminService';
@@ -47,8 +54,8 @@ export default function AdminFridgeOrderDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
 
-  // Producers for assign dropdown
-  const [producers, setProducers] = useState<StaffMember[]>([]);
+  // Staff (producers + transporters) for assign dropdown
+  const [assignableStaff, setAssignableStaff] = useState<StaffMember[]>([]);
   const [assigning, setAssigning] = useState(false);
 
   // Payment state
@@ -60,6 +67,16 @@ export default function AdminFridgeOrderDetailPage() {
     notes: '',
   });
   const [savingPayment, setSavingPayment] = useState(false);
+  const [payScreenshotFile, setPayScreenshotFile] = useState<File | null>(null);
+  const [payScreenshotPreview, setPayScreenshotPreview] = useState<string | null>(null);
+  const payFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Modification state
+  const [modifications, setModifications] = useState<
+    Record<string, { quantity: number; remove: boolean; removalReason: string }>
+  >({});
+  const [showRemoveInput, setShowRemoveInput] = useState<string | null>(null);
+  const [modifying, setModifying] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -71,12 +88,17 @@ export default function AdminFridgeOrderDetailPage() {
     try {
       const data = await adminService.getFridgeOrder(id!);
       setOrder(data);
-      // Load all producers for assignment
-      adminService
-        .listStaff({ role: 'PRODUCER' })
-        .then((res) => {
-          const staff = Array.isArray(res) ? res : res.staff || [];
-          setProducers(staff.filter((p: StaffMember) => p.active !== false));
+      // Load producers + transporters for assignment
+      Promise.all([
+        adminService.listStaff({ role: 'PRODUCER' }).catch(() => []),
+        adminService.listStaff({ role: 'TRANSPORTER' }).catch(() => []),
+      ])
+        .then(([prodRes, transRes]) => {
+          const prods = Array.isArray(prodRes) ? prodRes : prodRes.staff || [];
+          const trans = Array.isArray(transRes) ? transRes : transRes.staff || [];
+          setAssignableStaff(
+            [...prods, ...trans].filter((s: StaffMember) => s.active !== false)
+          );
         })
         .catch(() => {});
     } catch (err: unknown) {
@@ -130,6 +152,21 @@ export default function AdminFridgeOrderDetailPage() {
     }
   };
 
+  const handlePayScreenshotSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPayScreenshotFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setPayScreenshotPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearPayScreenshot = () => {
+    setPayScreenshotFile(null);
+    setPayScreenshotPreview(null);
+    if (payFileInputRef.current) payFileInputRef.current.value = '';
+  };
+
   const openPaymentForm = () => {
     const total = parseFloat(order?.totalAmount || '0');
     const paid = parseFloat(order?.paidAmount || '0');
@@ -152,14 +189,20 @@ export default function AdminFridgeOrderDetailPage() {
     }
     setSavingPayment(true);
     try {
-      await adminService.logFridgePayment(id, {
+      const payData = {
         amount,
         method: paymentForm.method,
         reference: paymentForm.reference || undefined,
         notes: paymentForm.notes || undefined,
-      });
+      };
+      if (payScreenshotFile) {
+        await adminService.uploadFridgePaymentScreenshot(id, payScreenshotFile, payData);
+      } else {
+        await adminService.logFridgePayment(id, payData);
+      }
       toast.success('Payment logged');
       setShowPaymentForm(false);
+      clearPayScreenshot();
       const updatedOrder = await adminService.getFridgeOrder(id);
       setOrder(updatedOrder);
     } catch (err: unknown) {
@@ -168,6 +211,91 @@ export default function AdminFridgeOrderDetailPage() {
       setSavingPayment(false);
     }
   };
+
+  const getModifiedQuantity = (itemId: string, originalQty: number) => {
+    return modifications[itemId]?.quantity ?? originalQty;
+  };
+
+  const isItemRemoved = (itemId: string) => {
+    return modifications[itemId]?.remove ?? false;
+  };
+
+  const handleDecreaseQuantity = (itemId: string, currentQty: number) => {
+    const mod = modifications[itemId] || { quantity: currentQty, remove: false, removalReason: '' };
+    const step = currentQty >= 1 ? 0.5 : 0.25;
+    const newQty = Math.max(step, mod.quantity - step);
+    setModifications((prev) => ({ ...prev, [itemId]: { ...mod, quantity: +newQty.toFixed(3) } }));
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    const mod = modifications[itemId] || { quantity: 0, remove: false, removalReason: '' };
+    setModifications((prev) => ({
+      ...prev,
+      [itemId]: { ...mod, remove: true },
+    }));
+    setShowRemoveInput(itemId);
+  };
+
+  const handleUndoRemove = (itemId: string) => {
+    setModifications((prev) => {
+      const copy = { ...prev };
+      if (copy[itemId]) {
+        copy[itemId] = { ...copy[itemId], remove: false, removalReason: '' };
+      }
+      return copy;
+    });
+    setShowRemoveInput(null);
+  };
+
+  const handleConfirmWithModifications = async () => {
+    if (!id || !order) return;
+    const items = order.items
+      .map((item) => {
+        const mod = modifications[item.id];
+        if (!mod) return null;
+        if (mod.remove) {
+          return { itemId: item.id, remove: true, removalReason: mod.removalReason || undefined };
+        }
+        const originalQty = parseFloat(item.quantity);
+        if (mod.quantity < originalQty) {
+          return { itemId: item.id, quantity: mod.quantity };
+        }
+        return null;
+      })
+      .filter(Boolean) as { itemId: string; quantity?: number; remove?: boolean; removalReason?: string }[];
+
+    if (items.length === 0) {
+      toast.error('No modifications to apply');
+      return;
+    }
+
+    setModifying(true);
+    try {
+      const updated = await adminService.modifyOrder(id, items);
+      setOrder(updated);
+      setModifications({});
+      setShowRemoveInput(null);
+      toast.success('Order confirmed with modifications');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setModifying(false);
+    }
+  };
+
+  const hasModifications = Object.keys(modifications).some((itemId) => {
+    const mod = modifications[itemId];
+    if (mod.remove) return true;
+    const item = order?.items.find((i) => i.id === itemId);
+    if (item && mod.quantity < parseFloat(item.quantity)) return true;
+    return false;
+  });
+
+  const modifiedTotal = order?.items.reduce((sum, item) => {
+    if (isItemRemoved(item.id)) return sum;
+    const qty = getModifiedQuantity(item.id, parseFloat(item.quantity));
+    return sum + qty * parseFloat(item.unitPrice);
+  }, 0);
 
   const whatsappLink = (phone: string) =>
     `https://wa.me/91${phone.replace(/\D/g, '').replace(/^91/, '')}`;
@@ -249,7 +377,20 @@ export default function AdminFridgeOrderDetailPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-heading font-bold text-2xl">{order.orderNumber}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="font-heading font-bold text-2xl">{order.orderNumber}</h1>
+            {order.orderType === 'HOME_DELIVERY' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                <Truck className="w-3.5 h-3.5" />
+                Home Delivery
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Package className="w-3.5 h-3.5" />
+                Fridge Pickup
+              </span>
+            )}
+          </div>
           <p className="text-sm text-text-muted">{formatDateTime(order.createdAt)}</p>
         </div>
         <span
@@ -347,13 +488,13 @@ export default function AdminFridgeOrderDetailPage() {
             </button>
           </div>
 
-          {/* Assign to producer */}
+          {/* Assign to staff */}
           <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-sm text-text-muted">
               <User className="w-4 h-4" />
               Assigned to:
             </div>
-            {producers.length > 0 ? (
+            {assignableStaff.length > 0 ? (
               <select
                 value={order.assignedToId || ''}
                 onChange={(e) => {
@@ -363,15 +504,15 @@ export default function AdminFridgeOrderDetailPage() {
                 className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green bg-white disabled:opacity-50"
               >
                 <option value="">Unassigned</option>
-                {producers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
+                {assignableStaff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
                   </option>
                 ))}
               </select>
             ) : (
               <span className="text-sm text-text-muted">
-                {order.assignedTo?.name || 'No producers assigned to this fridge'}
+                {order.assignedTo?.name || 'No staff available'}
               </span>
             )}
           </div>
@@ -383,35 +524,140 @@ export default function AdminFridgeOrderDetailPage() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5">
           <h2 className="font-medium text-text-dark mb-4">Order Items</h2>
           <div className="space-y-3">
-            {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{item.vegetable?.emoji || '🥬'}</span>
-                  <div>
-                    <p className="font-medium text-sm">{item.vegetable?.name}</p>
-                    <p className="text-xs text-text-muted">
-                      {item.quantity} {item.unit} x {'\u20B9'}
-                      {item.unitPrice}
-                    </p>
+            {order.items.map((item) => {
+              const originalQty = parseFloat(item.quantity);
+              const currentQty = getModifiedQuantity(item.id, originalQty);
+              const removed = isItemRemoved(item.id);
+              const wasModified = item.originalQuantity && item.originalQuantity !== item.quantity;
+              const isPending = order.status === 'PENDING';
+              const hasLocalMod = modifications[item.id] && (removed || currentQty < originalQty);
+              const itemTotal = removed ? 0 : currentQty * parseFloat(item.unitPrice);
+
+              return (
+                <div
+                  key={item.id}
+                  className={`py-2 border-b border-gray-50 last:border-0 ${removed ? 'opacity-50' : ''} ${item.isRemoved ? 'opacity-40 line-through' : ''}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{item.vegetable?.emoji || '🥬'}</span>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {item.vegetable?.name}
+                          {item.isRemoved && (
+                            <span className="ml-2 text-xs text-red-500 font-normal">Removed</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-text-muted">
+                          {hasLocalMod ? currentQty.toFixed(1) : item.quantity} {item.unit} x{' '}
+                          {'\u20B9'}
+                          {item.unitPrice}
+                          {wasModified && !item.isRemoved && (
+                            <span className="ml-1 text-amber-600">
+                              (Original: {item.originalQuantity})
+                            </span>
+                          )}
+                        </p>
+                        {item.removalReason && (
+                          <p className="text-xs text-red-500 mt-0.5">
+                            Reason: {item.removalReason}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isPending && !item.isRemoved && !removed && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDecreaseQuantity(item.id, originalQty)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition"
+                            title="Decrease quantity"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="text-xs font-medium w-10 text-center">
+                            {hasLocalMod ? currentQty.toFixed(1) : originalQty.toFixed(1)}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition"
+                            title="Remove item"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                      {isPending && removed && (
+                        <button
+                          onClick={() => handleUndoRemove(item.id)}
+                          className="text-xs text-blue-600 hover:underline font-medium"
+                        >
+                          Undo
+                        </button>
+                      )}
+                      <p className="font-medium text-sm w-16 text-right">
+                        {'\u20B9'}
+                        {hasLocalMod ? itemTotal.toFixed(2) : item.totalPrice}
+                      </p>
+                    </div>
                   </div>
+                  {/* Removal reason input */}
+                  {showRemoveInput === item.id && removed && (
+                    <div className="mt-2 ml-9">
+                      <input
+                        type="text"
+                        placeholder="Reason for removal (optional)"
+                        value={modifications[item.id]?.removalReason || ''}
+                        onChange={(e) =>
+                          setModifications((prev) => ({
+                            ...prev,
+                            [item.id]: { ...prev[item.id], removalReason: e.target.value },
+                          }))
+                        }
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-green"
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                  {/* Show "Original: X" label when locally modified */}
+                  {hasLocalMod && !removed && (
+                    <p className="text-[10px] text-amber-600 ml-9 mt-0.5">
+                      Original: {originalQty} {item.unit}
+                    </p>
+                  )}
                 </div>
-                <p className="font-medium text-sm">
-                  {'\u20B9'}
-                  {item.totalPrice}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex justify-between items-center pt-4 mt-3 border-t border-gray-200">
             <span className="font-medium">Total</span>
-            <span className="text-lg font-bold">
-              {'\u20B9'}
-              {order.totalAmount}
-            </span>
+            <div className="text-right">
+              {hasModifications && modifiedTotal !== undefined && (
+                <span className="text-sm text-text-muted line-through mr-2">
+                  {'\u20B9'}
+                  {order.totalAmount}
+                </span>
+              )}
+              <span className="text-lg font-bold">
+                {'\u20B9'}
+                {hasModifications && modifiedTotal !== undefined
+                  ? modifiedTotal.toFixed(2)
+                  : order.totalAmount}
+              </span>
+            </div>
           </div>
+          {/* Confirm with Modifications button */}
+          {order.status === 'PENDING' && hasModifications && (
+            <div className="mt-4 pt-3 border-t border-gray-100">
+              <button
+                onClick={handleConfirmWithModifications}
+                disabled={modifying}
+                className="w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 transition disabled:opacity-50"
+              >
+                {modifying ? 'Applying...' : 'Confirm with Modifications'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Sidebar Info */}
@@ -436,14 +682,38 @@ export default function AdminFridgeOrderDetailPage() {
             </div>
           </div>
 
-          {/* Fridge / Location Info */}
+          {/* Fridge / Delivery Location Info */}
           <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <h2 className="font-medium text-text-dark mb-3">Pickup Location</h2>
-            <div className="space-y-2 text-sm">
-              <p className="font-medium">{order.refrigerator?.name}</p>
-              <p className="text-text-muted">{order.refrigerator?.location?.name}</p>
-              <p className="text-text-muted">{order.refrigerator?.location?.address}</p>
-            </div>
+            {order.orderType === 'HOME_DELIVERY' ? (
+              <>
+                <h2 className="font-medium text-text-dark mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                  Delivery Address
+                </h2>
+                <div className="space-y-2 text-sm">
+                  {order.address ? (
+                    <>
+                      <p className="font-medium">{order.address.label}</p>
+                      <p className="text-text-muted">{order.address.text}</p>
+                    </>
+                  ) : (
+                    <p className="text-text-muted">Address not available</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="font-medium text-text-dark mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-emerald-600" />
+                  Pickup Location
+                </h2>
+                <div className="space-y-2 text-sm">
+                  <p className="font-medium">{order.refrigerator?.name}</p>
+                  <p className="text-text-muted">{order.refrigerator?.location?.name}</p>
+                  <p className="text-text-muted">{order.refrigerator?.location?.address}</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Notes */}
@@ -569,6 +839,41 @@ export default function AdminFridgeOrderDetailPage() {
                   placeholder="Optional notes"
                 />
               </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-text-dark mb-1">Screenshot</label>
+                <input
+                  ref={payFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePayScreenshotSelect}
+                  className="hidden"
+                />
+                {payScreenshotPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={payScreenshotPreview}
+                      alt="Screenshot preview"
+                      className="h-20 rounded-lg border border-gray-200 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={clearPayScreenshot}
+                      className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => payFileInputRef.current?.click()}
+                    className="px-3 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-text-muted flex items-center gap-1.5 hover:border-primary-green hover:text-primary-green transition"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Attach Screenshot
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
               <button
@@ -599,25 +904,39 @@ export default function AdminFridgeOrderDetailPage() {
                 key={p.id}
                 className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-gray-50 hover:bg-gray-50/50"
               >
-                <div>
-                  <p className="text-sm font-medium text-text-dark">
-                    {'\u20B9'}
-                    {parseFloat(p.amount).toFixed(2)}
-                    <span
-                      className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        p.method === 'UPI'
-                          ? 'bg-purple-100 text-purple-700'
-                          : 'bg-green-100 text-green-700'
-                      }`}
+                <div className="flex items-center gap-2.5">
+                  {p.screenshotUrl && (
+                    <button
+                      onClick={() => window.open(p.screenshotUrl!, '_blank')}
+                      className="flex-shrink-0"
                     >
-                      {p.method}
-                    </span>
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    {formatDateTime(p.receivedAt || p.createdAt)}
-                    {p.loggedBy?.name && ` - by ${p.loggedBy.name}`}
-                    {p.reference && ` - Ref: ${p.reference}`}
-                  </p>
+                      <img
+                        src={p.screenshotUrl}
+                        alt="Payment screenshot"
+                        className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer"
+                      />
+                    </button>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-text-dark">
+                      {'\u20B9'}
+                      {parseFloat(p.amount).toFixed(2)}
+                      <span
+                        className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                          p.method === 'UPI'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}
+                      >
+                        {p.method}
+                      </span>
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      {formatDateTime(p.receivedAt || p.createdAt)}
+                      {p.loggedBy?.name && ` - by ${p.loggedBy.name}`}
+                      {p.reference && ` - Ref: ${p.reference}`}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}

@@ -7,6 +7,7 @@ import { ApiError } from '../utils/ApiError';
 import { parsePagination } from '../utils/pagination';
 import { getAuthUser } from '../utils/getUser';
 import { computePaymentStatus } from '../utils/payment';
+import { createNotification } from '../lib/notifications';
 
 const fridgeOrderInclude = {
   customer: { select: { id: true, name: true, phone: true } },
@@ -15,6 +16,7 @@ const fridgeOrderInclude = {
       location: { select: { id: true, name: true, address: true } },
     },
   },
+  address: { select: { id: true, label: true, text: true } },
   items: {
     include: {
       vegetable: { select: { id: true, name: true, emoji: true } },
@@ -30,7 +32,7 @@ const fridgeOrderInclude = {
 };
 
 const updateStatusSchema = z.object({
-  status: z.enum(['CONFIRMED', 'READY', 'PICKED_UP', 'CANCELLED']),
+  status: z.enum(['CONFIRMED', 'READY', 'PICKED_UP', 'DELIVERED', 'CANCELLED']),
   notes: z.string().optional(),
 });
 
@@ -80,6 +82,7 @@ export const listFridgeOrders = async (req: Request, res: Response) => {
             location: { select: { id: true, name: true } },
           },
         },
+        address: { select: { id: true, label: true, text: true } },
         items: {
           include: {
             vegetable: { select: { id: true, name: true, emoji: true } },
@@ -134,12 +137,12 @@ export const updateFridgeOrderStatus = async (req: Request, res: Response) => {
     throw new ApiError(404, 'Fridge pickup order not found');
   }
 
-  // Terminal states: cannot transition out of CANCELLED or PICKED_UP
+  // Terminal states: cannot transition out of CANCELLED or DELIVERED
   if (order.status === 'CANCELLED') {
     throw new ApiError(400, 'Cannot update a cancelled order');
   }
-  if (order.status === 'PICKED_UP') {
-    throw new ApiError(400, 'Cannot update a picked up order');
+  if (order.status === 'DELIVERED') {
+    throw new ApiError(400, 'Cannot update a delivered order');
   }
 
   // Validate state transitions
@@ -147,6 +150,7 @@ export const updateFridgeOrderStatus = async (req: Request, res: Response) => {
     PENDING: ['CONFIRMED', 'CANCELLED'],
     CONFIRMED: ['READY', 'CANCELLED'],
     READY: ['PICKED_UP', 'CANCELLED'],
+    PICKED_UP: ['DELIVERED', 'CANCELLED'],
   };
 
   const allowed = validTransitions[order.status] || [];
@@ -208,6 +212,10 @@ export const updateFridgeOrderStatus = async (req: Request, res: Response) => {
       updateData.pickedUpAt = new Date();
     }
 
+    if (status === 'DELIVERED') {
+      updateData.deliveredAt = new Date();
+    }
+
     if (status === 'CANCELLED') {
       // If was CONFIRMED or READY, restore main vegetable stock
       if (order.status === 'CONFIRMED' || order.status === 'READY') {
@@ -252,6 +260,9 @@ export const logFridgePayment = async (req: Request, res: Response) => {
     warning = 'UPI payment logged without a reference number';
   }
 
+  // Handle optional screenshot upload
+  const screenshotUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
   const result = await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.create({
       data: {
@@ -259,6 +270,7 @@ export const logFridgePayment = async (req: Request, res: Response) => {
         amount: data.amount,
         method: data.method,
         reference: data.reference ?? null,
+        screenshotUrl,
         notes: data.notes ?? null,
         loggedById: user.id,
       },
@@ -313,13 +325,13 @@ export const assignFridgeOrder = async (req: Request, res: Response) => {
     throw new ApiError(404, 'Fridge pickup order not found');
   }
 
-  // Validate staff exists and is a PRODUCER
+  // Validate staff exists and is a PRODUCER or TRANSPORTER
   const staff = await prisma.staffUser.findUnique({ where: { id: staffId } });
   if (!staff) {
     throw new ApiError(404, 'Staff user not found');
   }
-  if (staff.role !== 'PRODUCER') {
-    throw new ApiError(400, 'Staff user must be a PRODUCER');
+  if (!['PRODUCER', 'TRANSPORTER'].includes(staff.role)) {
+    throw new ApiError(400, 'Staff user must be a PRODUCER or TRANSPORTER');
   }
 
   const updated = await prisma.fridgePickupOrder.update({
@@ -346,6 +358,7 @@ export const getFridgePendingCounts = async (_req: Request, res: Response) => {
 
   for (const group of groups) {
     const fridgeId = group.refrigeratorId;
+    if (!fridgeId) continue;
     if (!counts[fridgeId]) {
       counts[fridgeId] = { pending: 0, confirmed: 0, ready: 0 };
     }
@@ -379,4 +392,132 @@ export const getFridgeActiveOrders = async (req: Request, res: Response) => {
   });
 
   res.json(orders);
+};
+
+// ─── Modify order (partial confirmation) ─────────────────────────────
+
+const modifyOrderSchema = z.object({
+  items: z.array(
+    z.object({
+      itemId: z.string().min(1),
+      quantity: z.number().positive().optional(),
+      remove: z.boolean().optional(),
+      removalReason: z.string().optional(),
+    })
+  ),
+});
+
+export const modifyOrder = async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const { items } = modifyOrderSchema.parse(req.body);
+
+  const order = await prisma.fridgePickupOrder.findUnique({
+    where: { id },
+    include: { items: true },
+  });
+
+  if (!order) {
+    throw new ApiError(404, 'Fridge pickup order not found');
+  }
+
+  if (order.status !== 'PENDING') {
+    throw new ApiError(400, 'Only PENDING orders can be modified');
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    for (const mod of items) {
+      const item = order.items.find((i) => i.id === mod.itemId);
+      if (!item) {
+        throw new ApiError(400, `Order item not found: ${mod.itemId}`);
+      }
+
+      const updateData: Record<string, unknown> = {};
+
+      // Save original quantity if not already saved
+      if (item.originalQuantity === null) {
+        updateData.originalQuantity = item.quantity;
+      }
+
+      if (mod.remove) {
+        updateData.isRemoved = true;
+        if (mod.removalReason) {
+          updateData.removalReason = mod.removalReason;
+        }
+      } else if (mod.quantity !== undefined) {
+        const newQty = new Decimal(mod.quantity);
+        updateData.quantity = newQty;
+        updateData.totalPrice = item.unitPrice.mul(newQty);
+      }
+
+      await tx.fridgePickupItem.update({
+        where: { id: mod.itemId },
+        data: updateData,
+      });
+    }
+
+    // Recalculate totalAmount from non-removed items
+    const allItems = await tx.fridgePickupItem.findMany({
+      where: { pickupOrderId: id },
+    });
+
+    const totalAmount = allItems
+      .filter((i) => !i.isRemoved)
+      .reduce((sum, i) => sum.add(i.totalPrice), new Decimal(0));
+
+    return tx.fridgePickupOrder.update({
+      where: { id },
+      data: {
+        totalAmount,
+        status: 'CONFIRMED',
+        confirmedAt: new Date(),
+      },
+      include: fridgeOrderInclude,
+    });
+  });
+
+  // Create notification for the customer
+  await createNotification(
+    order.customerId,
+    order.id,
+    'ORDER_MODIFIED',
+    'Order Modified & Confirmed',
+    `Your order ${order.orderNumber} has been modified and confirmed.`
+  );
+
+  res.json(updated);
+};
+
+// ─── Quick confirm order (one-click) ─────────────────────────────────
+
+export const quickConfirmOrder = async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const order = await prisma.fridgePickupOrder.findUnique({ where: { id } });
+
+  if (!order) {
+    throw new ApiError(404, 'Fridge pickup order not found');
+  }
+
+  if (order.status !== 'PENDING') {
+    throw new ApiError(400, 'Only PENDING orders can be confirmed');
+  }
+
+  const updated = await prisma.fridgePickupOrder.update({
+    where: { id },
+    data: {
+      status: 'CONFIRMED',
+      confirmedAt: new Date(),
+    },
+    include: fridgeOrderInclude,
+  });
+
+  await createNotification(
+    order.customerId,
+    order.id,
+    'ORDER_CONFIRMED',
+    'Order Confirmed',
+    `Your order ${order.orderNumber} has been confirmed.`
+  );
+
+  res.json(updated);
 };

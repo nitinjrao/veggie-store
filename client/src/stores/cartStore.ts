@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartItem, UnitType, Vegetable } from '../types';
+import type { CartItem, OrderType, UnitType, Vegetable } from '../types';
 import { getUnitPrice, getDefaultUnit, getDefaultQuantity, getStep } from '../utils/pricing';
 
 interface CartState {
   items: CartItem[];
+  orderType: OrderType;
+  selectedFridgeId: string;
+  setOrderType: (type: OrderType) => void;
+  setSelectedFridgeId: (id: string) => void;
   addItem: (vegetable: Vegetable, unit?: UnitType) => void;
   removeItem: (vegetableId: string) => void;
   updateQuantity: (vegetableId: string, quantity: number) => void;
@@ -19,6 +23,11 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      orderType: 'FRIDGE_PICKUP' as OrderType,
+      selectedFridgeId: '',
+
+      setOrderType: (type: OrderType) => set({ orderType: type }),
+      setSelectedFridgeId: (id: string) => set({ selectedFridgeId: id }),
 
       addItem: (vegetable: Vegetable, preferredUnit?: UnitType) => {
         const { items } = get();
@@ -103,7 +112,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [] });
+        set({ items: [], orderType: 'FRIDGE_PICKUP', selectedFridgeId: '' });
       },
 
       addItemsFromOrder: (orderItems) => {

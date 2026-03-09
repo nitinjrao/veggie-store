@@ -33,8 +33,10 @@ const StaffLoginPage = lazy(() => import('./pages/staff/StaffLoginPage'));
 const ProducerDashboardPage = lazy(() => import('./pages/producer/ProducerDashboardPage'));
 const ProducerOrdersPage = lazy(() => import('./pages/producer/ProducerOrdersPage'));
 const ProducerFridgesPage = lazy(() => import('./pages/producer/ProducerFridgesPage'));
+const ProducerPackingPage = lazy(() => import('./pages/producer/ProducerPackingPage'));
 const SupplierDashboardPage = lazy(() => import('./pages/supplier/SupplierDashboardPage'));
 const TransporterDashboardPage = lazy(() => import('./pages/transporter/TransporterDashboardPage'));
+const TransporterOrdersPage = lazy(() => import('./pages/transporter/TransporterOrdersPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function PageLoader() {
@@ -86,12 +88,14 @@ export default function App() {
           <Route index element={<ProducerDashboardPage />} />
           <Route path="orders" element={<ProducerOrdersPage />} />
           <Route path="fridges" element={<ProducerFridgesPage />} />
+          <Route path="packing" element={<ProducerPackingPage />} />
         </Route>
         <Route path="/supplier" element={<StaffLayout />}>
           <Route index element={<SupplierDashboardPage />} />
         </Route>
         <Route path="/transporter" element={<StaffLayout />}>
           <Route index element={<TransporterDashboardPage />} />
+          <Route path="orders" element={<TransporterOrdersPage />} />
         </Route>
 
         {/* 404 */}

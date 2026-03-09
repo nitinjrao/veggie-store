@@ -24,6 +24,9 @@ import adminFridgeRoutes from './routes/adminFridgeRoutes';
 import adminFridgeOrderRoutes from './routes/adminFridgeOrderRoutes';
 import producerFridgeRoutes from './routes/producerFridgeRoutes';
 import customerFridgeRoutes from './routes/customerFridgeRoutes';
+import customerRoutes from './routes/customerRoutes';
+import transporterRoutes from './routes/transporterRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -59,7 +62,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests, please try again later.' },
@@ -84,6 +87,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/vegetables', vegetableRoutes);
@@ -103,6 +107,9 @@ app.use('/api/admin/fridges', adminFridgeRoutes);
 app.use('/api/admin/fridge-orders', adminFridgeOrderRoutes);
 app.use('/api/producer/fridges', producerFridgeRoutes);
 app.use('/api/fridge', customerFridgeRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/transporter', transporterRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

@@ -19,6 +19,15 @@ export const listVegetables = async (_req: Request, res: Response) => {
   res.json(vegetables);
 };
 
+export const listFeaturedVegetables = async (_req: Request, res: Response) => {
+  const vegetables = await prisma.vegetable.findMany({
+    where: { available: true, featured: true },
+    include: vegetableInclude,
+    orderBy: { name: 'asc' },
+  });
+  res.json(vegetables);
+};
+
 export const getVegetableById = async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const vegetable = await prisma.vegetable.findUnique({
@@ -78,6 +87,16 @@ export const searchVegetables = async (req: Request, res: Response) => {
         { nameKannada: { contains: query, mode: 'insensitive' } },
       ],
     },
+    include: vegetableInclude,
+    orderBy: { name: 'asc' },
+  });
+
+  res.json(vegetables);
+};
+
+export const getWarehouseAvailable = async (_req: Request, res: Response) => {
+  const vegetables = await prisma.vegetable.findMany({
+    where: { available: true, stockKg: { gt: 0 } },
     include: vegetableInclude,
     orderBy: { name: 'asc' },
   });

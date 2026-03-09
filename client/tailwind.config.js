@@ -7,7 +7,8 @@ export default {
         'primary-green': '#22c55e',
         'primary-green-dark': '#16a34a',
         'primary-green-light': '#dcfce7',
-        'bg-light': '#f8faf8',
+        'bg-light': '#f6f7f4',
+        'bg-card': '#ffffff',
         'text-dark': '#1a1a2e',
         'text-muted': '#6b7280',
         accent: {
@@ -17,8 +18,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        heading: ['Poppins', 'sans-serif'],
+        sans: ['DM Sans', 'sans-serif'],
+        heading: ['Sora', 'sans-serif'],
         hindi: ['Noto Sans Devanagari', 'sans-serif'],
       },
       boxShadow: {
