@@ -32,6 +32,9 @@ import { errorHandler } from './middleware/errorHandler';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy (Railway, Render, etc. run behind a reverse proxy)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173'].filter(
